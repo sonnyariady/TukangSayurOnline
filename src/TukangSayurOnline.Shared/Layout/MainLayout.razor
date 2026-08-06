@@ -101,7 +101,7 @@
 
     protected override void OnInitialized()
     {
-        AppState.OnChange += StateHasChanged;
+        AppState.OnChange += () => InvokeAsync(StateHasChanged);
     }
 
     private async Task SwitchDemoRole(string role)
