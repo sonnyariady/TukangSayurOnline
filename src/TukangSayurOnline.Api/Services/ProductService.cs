@@ -100,19 +100,21 @@ public class ProductService : IProductService
     public async Task<List<PopularProductReportDto>> GetPopularProductsAsync()
     {
         var sales = await _context.StockTransactions
+            .Include(t => t.Product)
             .Where(t => t.Type == StockTransactionType.SaleOut)
-            .GroupBy(t => new { t.ProductId, t.Product.Name, t.Product.Category })
+            .ToListAsync();
+
+        return sales
+            .GroupBy(t => new { t.ProductId, ProductName = t.Product?.Name ?? "", Category = t.Product?.Category ?? "" })
             .Select(g => new PopularProductReportDto(
                 g.Key.ProductId,
-                g.Key.Name,
+                g.Key.ProductName,
                 g.Key.Category,
                 g.Sum(x => x.Quantity),
                 g.Sum(x => x.TotalAmount)
             ))
             .OrderByDescending(r => r.TotalQuantitySold)
-            .ToListAsync();
-
-        return sales;
+            .ToList();
     }
 
     public async Task<List<EmptyStockReportDto>> GetEmptyStockReportsAsync()

@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @inject AppStateService AppState
+@inject ApiService Api
 @inject NavigationManager NavManager
 
 <MudThemeProvider Theme="_customTheme" IsDarkMode="true" />
@@ -64,9 +65,9 @@
             <MudDivider Class="my-3" Style="border-color: #334155;" />
 
             <MudText Typo="Typo.caption" Class="px-4 py-2 font-weight-bold" Style="color: #94a3b8;">ROLE SWITCHER DEMO</MudText>
-            <MudNavLink Href="/admin" Icon="@Icons.Material.Filled.SupervisorAccount">Modul Admin</MudNavLink>
-            <MudNavLink Href="/tukangsayur" Icon="@Icons.Material.Filled.DirectionsBike">Modul Tukang Sayur</MudNavLink>
-            <MudNavLink Href="/pelanggan" Icon="@Icons.Material.Filled.Search">Modul Pelanggan</MudNavLink>
+            <MudNavLink OnClick='() => SwitchDemoRole("Admin")' Icon="@Icons.Material.Filled.SupervisorAccount">Modul Admin</MudNavLink>
+            <MudNavLink OnClick='() => SwitchDemoRole("TukangSayur")' Icon="@Icons.Material.Filled.DirectionsBike">Modul Tukang Sayur</MudNavLink>
+            <MudNavLink OnClick='() => SwitchDemoRole("Pelanggan")' Icon="@Icons.Material.Filled.Search">Modul Pelanggan</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
 
@@ -100,6 +101,32 @@
     protected override void OnInitialized()
     {
         AppState.OnChange += StateHasChanged;
+    }
+
+    private async Task SwitchDemoRole(string role)
+    {
+        LoginRequestDto loginModel = role switch
+        {
+            "Admin" => new("admin@tukangsayur.com", "Admin123!"),
+            "TukangSayur" => new("mang.udin@gmail.com", "Udin123!"),
+            _ => new("pelanggan@gmail.com", "Pelanggan123!")
+        };
+
+        var res = await Api.LoginAsync(loginModel);
+        if (res != null && res.Success)
+        {
+            AppState.SetUser(res.Token, res.UserId, res.FullName, res.Email, res.Role, res.TukangSayurId);
+        }
+        else
+        {
+            if (role == "Admin") AppState.SetUser("demo_token", 1, "Administrator Sayur", "admin@tukangsayur.com", "Admin", null);
+            else if (role == "TukangSayur") AppState.SetUser("demo_token", 2, "Mang Udin Sutarman", "mang.udin@gmail.com", "TukangSayur", 1);
+            else AppState.SetUser("demo_token", 4, "Ibu Siti Aminah", "pelanggan@gmail.com", "Pelanggan", null);
+        }
+
+        if (role == "Admin") NavManager.NavigateTo("/admin");
+        else if (role == "TukangSayur") NavManager.NavigateTo("/tukangsayur");
+        else NavManager.NavigateTo("/pelanggan");
     }
 
     private void DrawerToggle()
