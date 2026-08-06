@@ -84,9 +84,11 @@
     {
         _loading = true;
         _errorMessage = string.Empty;
+        StateHasChanged();
 
         var req = new LoginRequestDto(_loginModel.Email, _loginModel.Password);
         var res = await Api.LoginAsync(req);
+
         _loading = false;
 
         if (res != null && res.Success)
@@ -94,14 +96,20 @@
             AppState.SetUser(res.Token, res.UserId, res.FullName, res.Email, res.Role, res.TukangSayurId);
             Snackbar.Add($"Selamat datang, {res.FullName}!", Severity.Success);
 
-            if (res.Role == "Admin") NavManager.NavigateTo("/admin");
-            else if (res.Role == "TukangSayur") NavManager.NavigateTo("/tukangsayur");
-            else NavManager.NavigateTo("/pelanggan");
+            var targetUrl = res.Role switch
+            {
+                "Admin" => "/admin",
+                "TukangSayur" => "/tukangsayur",
+                _ => "/pelanggan"
+            };
+
+            NavManager.NavigateTo(targetUrl);
         }
         else
         {
             _errorMessage = res?.Message ?? "Gagal login. Periksa koneksi backend.";
             Snackbar.Add(_errorMessage, Severity.Error);
+            StateHasChanged();
         }
     }
 
