@@ -23,9 +23,12 @@ public static class MauiProgram
 
         // Register App State and API Service from Shared RCL
         builder.Services.AddSingleton<AppStateService>();
+
+        // Dynamic Platform-Aware API Base URL Resolution
+        var apiBaseUrl = GetPlatformApiBaseUrl();
         builder.Services.AddScoped(sp => new HttpClient
         {
-            BaseAddress = new Uri("http://localhost:5000/")
+            BaseAddress = new Uri(apiBaseUrl)
         });
         builder.Services.AddScoped<ApiService>();
 
@@ -35,5 +38,16 @@ public static class MauiProgram
 #endif
 
         return builder.Build();
+    }
+
+    private static string GetPlatformApiBaseUrl()
+    {
+#if ANDROID
+        // Android Emulator uses 10.0.2.2 to access host machine localhost:5000
+        return "http://10.0.2.2:5000/";
+#else
+        // Windows Desktop, MacCatalyst, iOS Simulator
+        return "http://localhost:5000/";
+#endif
     }
 }
