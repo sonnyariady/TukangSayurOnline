@@ -212,10 +212,10 @@ Gunakan akun pengujian bawaan di bawah ini (atau gunakan tombol **Akses Cepat Ak
 
 ## 📤 Petunjuk Commit & Push ke GitHub
 
-Jalankan perintah berikut di PowerShell untuk mengunggah seluruh codebase ke GitHub:
+Jalankan perintah berikut di PowerShell untuk mengunggah seluruh codebase ke akun GitHub `sonnyariady`:
 
 ```powershell
-git add .
-git commit -m "feat: Add platform-aware IP resolution for MAUI Mobile (10.0.2.2 for Android Emulator, 0.0.0.0 for API binding)"
-git push origin main
+git remote add origin https://github.com/sonnyariady/TukangSayurOnline.git
+git branch -M main
+git push -u origin main
 ```
