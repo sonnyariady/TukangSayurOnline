@@ -113,10 +113,10 @@ CREATE TABLE "OrderItems" (
 
 -- Data Users (Role: 0=Admin, 1=TukangSayur, 2=Pelanggan)
 INSERT INTO "Users" ("Id", "FullName", "Email", "Phone", "PasswordHash", "Role", "Address", "Latitude", "Longitude", "CreatedAt") VALUES
-(1, 'Administrator Sayur', 'admin@tukangsayur.com', '081234567890', '0tC3Cyl5gYI1tV9xL0N60S2Wl21iOsq3y064+wB0n6U=', 0, 'Kantor Pusat Tukang Sayur Online, Jakarta', -6.2088, 106.8456, CURRENT_TIMESTAMP),
-(2, 'Mang Udin Sutarman', 'mang.udin@gmail.com', '081987654321', 'vN1bA6e9L++3N1j4gQ31oO4Gq1gLq+1wH/h/eFvW1z4=', 1, 'Jl. Kelapa Gading No. 12, Jakarta Utara', -6.1550, 106.9020, CURRENT_TIMESTAMP),
-(3, 'Bang Budi Santoso', 'bang.budi@gmail.com', '081777888999', 'gQ1hE4vL+9N1j4gQ31oO4Gq1gLq+1wH/h/eFvW1z4=', 1, 'Jl. Tebet Raya No. 45, Jakarta Selatan', -6.2250, 106.8550, CURRENT_TIMESTAMP),
-(4, 'Ibu Siti Aminah', 'pelanggan@gmail.com', '085611223344', 'aN2cE6vM+9N1j4gQ31oO4Gq1gLq+1wH/h/eFvW1z4=', 2, 'Jl. Sunter Garden No. 8, Jakarta Utara', -6.1480, 106.8720, CURRENT_TIMESTAMP);
+(1, 'Administrator Sayur', 'admin@tukangsayur.com', '081234567890', 'LTNKpSPBIB0XZ03WC9Yo0oib6uAl1n0rwpKiiHyOLOY=', 0, 'Kantor Pusat Tukang Sayur Online, Jakarta', -6.2088, 106.8456, CURRENT_TIMESTAMP),
+(2, 'Mang Udin Sutarman', 'mang.udin@gmail.com', '081987654321', 'JIo/9wZsiYWTebz5U489f2reju92PigNIknNobxST68=', 1, 'Jl. Kelapa Gading No. 12, Jakarta Utara', -6.1550, 106.9020, CURRENT_TIMESTAMP),
+(3, 'Bang Budi Santoso', 'bang.budi@gmail.com', '081777888999', 'qYcy9t08c2o8dgu8MaOFjy18fRbfRpOZGL0USU9mHX0=', 1, 'Jl. Tebet Raya No. 45, Jakarta Selatan', -6.2250, 106.8550, CURRENT_TIMESTAMP),
+(4, 'Ibu Siti Aminah', 'pelanggan@gmail.com', '085611223344', 'Gu6YDbxu54fiDFKj+vSz29AymNfK5394zjQclSAtCm4=', 2, 'Jl. Sunter Garden No. 8, Jakarta Utara', -6.1480, 106.8720, CURRENT_TIMESTAMP);
 
 SELECT setval('"Users_Id_seq"', (SELECT MAX("Id") FROM "Users"));
 
