@@ -10,75 +10,83 @@
 Aplikasi **Tukang Sayur Online** adalah platform ekosistem perdagangan sayur berbasis lokasi dan real-time stok yang mengintegrasikan tiga peran utama: **Admin**, **Tukang Sayur (Seller/Vendor)**, dan **Pelanggan (Customer)**.
 
 Sistem dirancang dengan arsitektur **Multi-Project Enterprise Code Sharing**:
-- **`TukangSayurOnline.Shared`**: Razor Class Library (RCL) berbasis **MudBlazor 7.4.0** tempat beradanya Halaman UI, Component Layout, dan Service API yang dapat digunakan bersama oleh aplikasi Web dan Mobile.
-- **`TukangSayurOnline.Web`**: Aplikasi Web Browser (Blazor Web App .NET 9).
+- **`TukangSayurOnline.Shared`**: Razor Class Library (RCL) berbasis **MudBlazor 7.4.0** tempat beradanya Halaman UI, Component Layout, dan Service API yang digunakan bersama oleh aplikasi Web dan Mobile.
+- **`TukangSayurOnline.Web`**: Aplikasi Web Browser (Blazor Web App .NET 9) -> Port `http://localhost:5100`.
 - **`TukangSayurOnline.Mobile`**: Aplikasi Mobile & Desktop (.NET 9 MAUI Blazor Hybrid).
-- **`TukangSayurOnline.Api`**: Backend RESTful Web API (.NET 9) dengan database **PostgreSQL**.
+- **`TukangSayurOnline.Api`**: Backend RESTful Web API (.NET 9) dengan database **PostgreSQL** -> Port `http://localhost:5000`.
 
 ---
 
 ## 📋 Daftar Isi
-1. [Arsitektur Solution & Code Sharing](#-arsitektur-solution--code-sharing)
-2. [Prasyarat Sistem (Prerequisites)](#-prasyarat-sistem-prerequisites)
-3. [Panduan Langkah-demi-Langkah Menjalankan Aplikasi](#-panduan-langkah-demi-langkah-menjalankan-aplikasi)
-4. [Fitur Utama & Panduan Pengujian Role](#-fitur-utama--panduan-pengujian-role)
-5. [Dokumentasi RESTful API (Swagger)](#-dokumentasi-restful-api-swagger)
-6. [Petunjuk Commit & Push ke GitHub](#-petunjuk-commit--push-ke-github)
+1. [Arsitektur Solution & Port Configuration](#-arsitektur-solution--port-configuration)
+2. [Menjalankan Multiple Startup Projects di Visual Studio](#-menjalankan-multiple-startup-projects-di-visual-studio)
+3. [Prasyarat Sistem (Prerequisites)](#-prasyarat-sistem-prerequisites)
+4. [Panduan Langkah-demi-Langkah Menjalankan Aplikasi](#-panduan-langkah-demi-langkah-menjalankan-aplikasi)
+5. [Fitur Utama & Panduan Pengujian Role](#-fitur-utama--panduan-pengujian-role)
+6. [Dokumentasi RESTful API (Swagger)](#-dokumentasi-restful-api-swagger)
+7. [Petunjuk Commit & Push ke GitHub](#-petunjuk-commit--push-ke-github)
 
 ---
 
-## 🏗️ Arsitektur Solution & Code Sharing
+## 🌐 Arsitektur Solution & Port Configuration
+
+### Alokasi Port Resmi:
+- **`TukangSayurOnline.Api`**: `http://localhost:5000` (Swagger UI: `http://localhost:5000/swagger`)
+- **`TukangSayurOnline.Web`**: `http://localhost:5100` (MudBlazor Web UI Interface)
 
 ```mermaid
 graph TD
-    subgraph Shared UI Layer [TukangSayurOnline.Shared - Razor Class Library]
+    subgraph Shared Core UI [TukangSayurOnline.Shared - RCL MudBlazor 7.4.0]
         Services[ApiService & AppStateService]
-        Layouts[MainLayout & MudTheme]
         Pages[Login, Register, Admin, TukangSayur & Pelanggan Dashboards]
     end
 
     subgraph Platform UI Clients
-        WebUI[TukangSayurOnline.Web - Blazor Web App] --> Shared UI Layer
-        MobileUI[TukangSayurOnline.Mobile - MAUI Blazor Hybrid] --> Shared UI Layer
+        WebUI[TukangSayurOnline.Web - http://localhost:5100] --> Shared Core UI
+        MobileUI[TukangSayurOnline.Mobile - MAUI Hybrid] --> Shared Core UI
     end
 
     subgraph Backend API & Database
-        API[TukangSayurOnline.Api - ASP.NET Core 9.0 API]
+        API[TukangSayurOnline.Api - http://localhost:5000]
         DB[(PostgreSQL DbTukangSayurOnline)]
     end
 
-    WebUI -->|HTTP REST JSON| API
-    MobileUI -->|HTTP REST JSON| API
+    WebUI -->|HTTP Client Target: http://localhost:5000/| API
+    MobileUI -->|HTTP Client Target: http://localhost:5000/| API
     API --> DB
 ```
 
-### Struktur Project dalam Solution (`TukangSayurOnline.sln`):
-```text
-c:\Latihan\TukangSayurOnline\
-├── init_db.sql                         <-- Script Manual Execute SQL (Tabel + Sample Data)
-├── README.md                           <-- Dokumentasi Panduan Jalankan Aplikasi
-├── TukangSayurOnline.sln              <-- Solution File (.NET 9 Solution)
-├── src/
-│   ├── TukangSayurOnline.Shared/       <-- Shared UI Library (MudBlazor Pages, Layout & Services)
-│   ├── TukangSayurOnline.Web/          <-- Web App Host (Blazor Web App .NET 9)
-│   ├── TukangSayurOnline.Mobile/       <-- Mobile Hybrid App Host (MAUI Hybrid .NET 9)
-│   └── TukangSayurOnline.Api/          <-- Backend Web API (.NET 9 + EF Core PostgreSQL)
-```
+---
+
+## ⚡ Menjalankan Multiple Startup Projects di Visual Studio
+
+Anda **bisa dan sangat direkomendasikan** untuk menjalankan project Web API dan Web UI secara bersamaan menggunakan fitur **Multiple Startup Projects** di Visual Studio:
+
+### Langkah Setting di Visual Studio:
+1. Klik kanan pada **Solution 'TukangSayurOnline'** di *Solution Explorer* -> pilih **Properties**.
+2. Pilih menu **Common Properties** -> **Configure Startup Projects**.
+3. Pilih opsi **Multiple startup projects**.
+4. Atur status project:
+   - `TukangSayurOnline.Api` -> pilih **Start**
+   - `TukangSayurOnline.Web` -> pilih **Start**
+   - `TukangSayurOnline.Mobile` -> pilih **None** (atau **Start** jika ingin sekaligus membuka App Desktop)
+   - `TukangSayurOnline.Shared` -> pilih **None**
+5. Klik **Apply** -> **OK**.
+6. Tekan tombol **F5** atau **Start** di Visual Studio!
+   - Browser 1 akan otomatis membuka Swagger API: `http://localhost:5000/swagger`
+   - Browser 2 akan otomatis membuka Web UI: `http://localhost:5100`
 
 ---
 
 ## 🛠️ Prasyarat Sistem (Prerequisites)
 
-Sebelum menjalankan aplikasi, pastikan komputer Anda telah terinstall perangkat lunak berikut:
 1. **.NET 9.0 SDK** (`dotnet --version` >= 9.0.100)
 2. **PostgreSQL Database 14+** (Berjalan di `localhost:5432`)
-3. **pgAdmin 4** / **DBeaver** / `psql` command line (Opsional untuk mengeksekusi SQL manual)
+3. **pgAdmin 4** / **DBeaver** / `psql` command line (Opsional)
 
 ---
 
 ## 🚀 Panduan Langkah-demi-Langkah Menjalankan Aplikasi
-
-Ikuti urutan langkah di bawah ini untuk memulai seluruh ekosistem aplikasi:
 
 ### 📍 Langkah 1: Persiapan Database PostgreSQL
 
@@ -90,7 +98,7 @@ Kredensial Database:
 - **Password**: `AppPass123`
 - **Connection String**: `Host=localhost;Port=5432;Database=DbTukangSayurOnline;Username=appuser;Password=AppPass123;Pooling=true;Include Error Detail=true`
 
-#### **Metode A: Eksekusi Script SQL Manual (Sangat Direkomendasikan)**
+#### **Metode Eksekusi Script SQL Manual**
 Script [init_db.sql](file:///c:/Latihan/TukangSayurOnline/init_db.sql) sudah menyertakan pembuatan tabel dan data awal sampel.
 
 1. Buka PostgreSQL Command Line / Terminal:
@@ -105,52 +113,41 @@ Script [init_db.sql](file:///c:/Latihan/TukangSayurOnline/init_db.sql) sudah men
    ```bash
    psql -U appuser -d DbTukangSayurOnline -f c:\Latihan\TukangSayurOnline\init_db.sql
    ```
-   *(Atau jalankan isi file `init_db.sql` di Query Tool pada **pgAdmin** / **DBeaver**)*.
-
-#### **Metode B: Auto Migration EF Core**
-Jika Anda melompati eksekusi file SQL, saat Backend API pertama kali dijalankan di Langkah 2, EF Core akan secara otomatis membuatkan database `DbTukangSayurOnline` beserta seluruh tabel & data bawaannya.
 
 ---
 
 ### 📍 Langkah 2: Jalankan Backend Web API (.NET 9.0)
 
-Buka Terminal / PowerShell di folder root project:
+Jika dijalankan via Command Line (PowerShell):
 
 ```powershell
 cd c:\Latihan\TukangSayurOnline
 dotnet run --project src/TukangSayurOnline.Api/TukangSayurOnline.Api.csproj
 ```
 
-Output terminal akan menunjukkan API siap melayani request di:
-`http://localhost:5000`
+API aktif di port resmi: `http://localhost:5000`
 
 ---
 
 ### 📍 Langkah 3: Uji Dokumentasi Swagger API
 
-Buka Web Browser pilihan Anda dan akses alamat:
+Buka Web Browser:
 👉 **[http://localhost:5000/swagger](http://localhost:5000/swagger)**
-
-Anda dapat menguji endpoint JWT Login, Register, Master Produk, Restock Stok, Sale Out, dan Pencarian Tukang Sayur Terdekat secara langsung.
 
 ---
 
-### 📍 Langkah 4: Jalankan Frontend Web App (Web Browser)
-
-Buka jendela Terminal / PowerShell baru untuk menjalankan aplikasi Web UI:
+### 📍 Langkah 4: Jalankan Frontend Web App (Browser UI)
 
 ```powershell
 cd c:\Latihan\TukangSayurOnline
 dotnet run --project src/TukangSayurOnline.Web/TukangSayurOnline.Web.csproj
 ```
 
-Setelah server aktif, buka browser di alamat yang tampil pada terminal (misal: `http://localhost:5100` atau `http://localhost:5200`).
+Aplikasi Web UI aktif di port resmi: `http://localhost:5100`
 
 ---
 
 ### 📍 Langkah 5: Jalankan Aplikasi Mobile / Hybrid (MAUI Blazor)
-
-Buka jendela Terminal / PowerShell baru untuk menjalankan aplikasi Mobile / Windows Desktop:
 
 ```powershell
 cd c:\Latihan\TukangSayurOnline
@@ -202,19 +199,7 @@ Gunakan akun pengujian bawaan di bawah ini (atau gunakan tombol **Akses Cepat Ak
 Jalankan perintah berikut di PowerShell untuk mengunggah seluruh codebase ke GitHub:
 
 ```powershell
-# 1. Inisialisasi Repository Git (jika belum dilakukan)
-git init
-
-# 2. Add seluruh file project (diatur oleh .gitignore)
 git add .
-
-# 3. Commit perubahan
-git commit -m "feat: Add Web UI app, Shared RCL library, PostgreSQL setup, and comprehensive documentation"
-
-# 4. Hubungkan ke Remote GitHub (Ganti URL sesuai repository Anda)
-git remote add origin https://github.com/USERNAME/TukangSayurOnline.git
-
-# 5. Push ke branch main
-git branch -M main
-git push -u origin main
+git commit -m "fix: Standardize API port to 5000 and Web UI port to 5100 for Visual Studio Multiple Startup Projects"
+git push origin main
 ```
