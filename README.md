@@ -12,27 +12,28 @@ Aplikasi **Tukang Sayur Online** adalah platform ekosistem perdagangan sayur ber
 Sistem dirancang dengan arsitektur **Multi-Project Enterprise Code Sharing**:
 - **`TukangSayurOnline.Shared`**: Razor Class Library (RCL) berbasis **MudBlazor 7.4.0** tempat beradanya Halaman UI, Component Layout, dan Service API yang digunakan bersama oleh aplikasi Web dan Mobile.
 - **`TukangSayurOnline.Web`**: Aplikasi Web Browser (Blazor Web App .NET 9) -> Port `http://localhost:5100`.
-- **`TukangSayurOnline.Mobile`**: Aplikasi Mobile & Desktop (.NET 9 MAUI Blazor Hybrid).
-- **`TukangSayurOnline.Api`**: Backend RESTful Web API (.NET 9) dengan database **PostgreSQL** -> Port `http://localhost:5000`.
+- **`TukangSayurOnline.Mobile`**: Aplikasi Mobile & Desktop (.NET 9 MAUI Blazor Hybrid) -> Otomatis menangani IP Emolator Android & Device fisik.
+- **`TukangSayurOnline.Api`**: Backend RESTful Web API (.NET 9) dengan database **PostgreSQL** -> Listening di `http://localhost:5000` dan `http://0.0.0.0:5000`.
 
 ---
 
 ## 📋 Daftar Isi
-1. [Arsitektur Solution & Port Configuration](#-arsitektur-solution--port-configuration)
-2. [Menjalankan Multiple Startup Projects di Visual Studio](#-menjalankan-multiple-startup-projects-di-visual-studio)
-3. [Prasyarat Sistem (Prerequisites)](#-prasyarat-sistem-prerequisites)
-4. [Panduan Langkah-demi-Langkah Menjalankan Aplikasi](#-panduan-langkah-demi-langkah-menjalankan-aplikasi)
-5. [Fitur Utama & Panduan Pengujian Role](#-fitur-utama--panduan-pengujian-role)
-6. [Dokumentasi RESTful API (Swagger)](#-dokumentasi-restful-api-swagger)
-7. [Petunjuk Commit & Push ke GitHub](#-petunjuk-commit--push-ke-github)
+1. [Arsitektur Solution & Network Configuration](#-arsitektur-solution--network-configuration)
+2. [Penanganan Akses IP Mobile (Android Emulator vs Device Fisik)](#-penanganan-akses-ip-mobile-android-emulator-vs-device-fisik)
+3. [Menjalankan Multiple Startup Projects di Visual Studio](#-menjalankan-multiple-startup-projects-di-visual-studio)
+4. [Prasyarat Sistem (Prerequisites)](#-prasyarat-sistem-prerequisites)
+5. [Panduan Langkah-demi-Langkah Menjalankan Aplikasi](#-panduan-langkah-demi-langkah-menjalankan-aplikasi)
+6. [Fitur Utama & Panduan Pengujian Role](#-fitur-utama--panduan-pengujian-role)
+7. [Dokumentasi RESTful API (Swagger)](#-dokumentasi-restful-api-swagger)
+8. [Petunjuk Commit & Push ke GitHub](#-petunjuk-commit--push-ke-github)
 
 ---
 
-## 🌐 Arsitektur Solution & Port Configuration
+## 🌐 Arsitektur Solution & Network Configuration
 
-### Alokasi Port Resmi:
-- **`TukangSayurOnline.Api`**: `http://localhost:5000` (Swagger UI: `http://localhost:5000/swagger`)
-- **`TukangSayurOnline.Web`**: `http://localhost:5100` (MudBlazor Web UI Interface)
+### Alokasi Port & Network Binding:
+- **`TukangSayurOnline.Api`**: `http://localhost:5000` & `http://0.0.0.0:5000` (Binding ke `0.0.0.0` memungkinkan koneksi dari emulator & jaringan Wi-Fi lokal).
+- **`TukangSayurOnline.Web`**: `http://localhost:5100` (MudBlazor Web UI Interface).
 
 ```mermaid
 graph TD
@@ -47,20 +48,35 @@ graph TD
     end
 
     subgraph Backend API & Database
-        API[TukangSayurOnline.Api - http://localhost:5000]
+        API[TukangSayurOnline.Api - 0.0.0.0:5000]
         DB[(PostgreSQL DbTukangSayurOnline)]
     end
 
-    WebUI -->|HTTP Client Target: http://localhost:5000/| API
-    MobileUI -->|HTTP Client Target: http://localhost:5000/| API
+    WebUI -->|HTTP Target: http://localhost:5000/| API
+    MobileUI -->|Android Emulator: http://10.0.2.2:5000/ | API
+    MobileUI -->|Windows/iOS: http://localhost:5000/ | API
     API --> DB
 ```
 
 ---
 
+## 📱 Penanganan Akses IP Mobile (Android Emulator vs Device Fisik)
+
+Secara teknis pada aplikasi **Mobile**:
+1. **Android Emulator**:
+   - Kata kunci `localhost` merujuk ke internal perangkat emulator itu sendiri, bukan ke laptop/komputer host Anda.
+   - Oleh karena itu, Android Emulator menggunakan IP loopback khusus: **`http://10.0.2.2:5000/`**.
+   - Sistem **MAUI Mobile** ini sudah secara otomatis mengkonfigurasi IP **`10.0.2.2:5000`** ketika dijalankan di Android Emulator!
+2. **Windows Desktop & iOS Simulator**:
+   - Menggunakan **`http://localhost:5000/`**.
+3. **HP Fisik (Physical Mobile Device via Wi-Fi)**:
+   - Jika Anda menghubungkan HP fisik via Wi-Fi lokal, sesuaikan file konfigurasi [appsettings.json](file:///c:/Latihan/TukangSayurOnline/src/TukangSayurOnline.Mobile/wwwroot/appsettings.json) di project Mobile ke IP Wi-Fi komputer Anda (contoh: `http://192.168.1.10:5000/`).
+
+---
+
 ## ⚡ Menjalankan Multiple Startup Projects di Visual Studio
 
-Anda **bisa dan sangat direkomendasikan** untuk menjalankan project Web API dan Web UI secara bersamaan menggunakan fitur **Multiple Startup Projects** di Visual Studio:
+Anda dapat menjalankan project Web API dan Web UI secara bersamaan di Visual Studio:
 
 ### Langkah Setting di Visual Studio:
 1. Klik kanan pada **Solution 'TukangSayurOnline'** di *Solution Explorer* -> pilih **Properties**.
@@ -69,12 +85,12 @@ Anda **bisa dan sangat direkomendasikan** untuk menjalankan project Web API dan 
 4. Atur status project:
    - `TukangSayurOnline.Api` -> pilih **Start**
    - `TukangSayurOnline.Web` -> pilih **Start**
-   - `TukangSayurOnline.Mobile` -> pilih **None** (atau **Start** jika ingin sekaligus membuka App Desktop)
+   - `TukangSayurOnline.Mobile` -> pilih **None** (atau **Start** untuk menyertakan App Desktop)
    - `TukangSayurOnline.Shared` -> pilih **None**
 5. Klik **Apply** -> **OK**.
-6. Tekan tombol **F5** atau **Start** di Visual Studio!
-   - Browser 1 akan otomatis membuka Swagger API: `http://localhost:5000/swagger`
-   - Browser 2 akan otomatis membuka Web UI: `http://localhost:5100`
+6. Tekan tombol **F5** atau **Start**!
+   - Browser 1 otomatis membuka Swagger: `http://localhost:5000/swagger`
+   - Browser 2 otomatis membuka Web UI: `http://localhost:5100`
 
 ---
 
@@ -125,7 +141,7 @@ cd c:\Latihan\TukangSayurOnline
 dotnet run --project src/TukangSayurOnline.Api/TukangSayurOnline.Api.csproj
 ```
 
-API aktif di port resmi: `http://localhost:5000`
+API aktif di port resmi: `http://localhost:5000` (dan `http://0.0.0.0:5000`).
 
 ---
 
@@ -200,6 +216,6 @@ Jalankan perintah berikut di PowerShell untuk mengunggah seluruh codebase ke Git
 
 ```powershell
 git add .
-git commit -m "fix: Standardize API port to 5000 and Web UI port to 5100 for Visual Studio Multiple Startup Projects"
+git commit -m "feat: Add platform-aware IP resolution for MAUI Mobile (10.0.2.2 for Android Emulator, 0.0.0.0 for API binding)"
 git push origin main
 ```
