@@ -1,0 +1,344 @@
+@page "/tukangsayur"
+@inject ApiService Api
+@inject AppStateService AppState
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-8">
+    <!-- VENDOR HEADER & ONLINE TOGGLE -->
+    <MudPaper Elevation="4" Class="pa-6 mb-6" Style="background: #1e293b; border-radius: 16px; border: 1px solid #334155;">
+        <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between gap-4">
+            <div>
+                <div class="d-flex align-center gap-2">
+                    <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #f59e0b;">🚴 Lapak Tukang Sayur</MudText>
+                    <MudChip T="string" Color="_isOnline ? Color.Success : Color.Dark" Size="Size.Small" Variant="Variant.Filled">
+                        @(_isOnline ? "ONLINE - SIAP JUALAN" : "OFFLINE")
+                    </MudChip>
+                </div>
+                <MudText Typo="Typo.body2" Class="mt-1" Style="color: #94a3b8;">
+                    Pemilik: <strong>@(string.IsNullOrEmpty(AppState.FullName) ? "Mang Udin Sutarman" : AppState.FullName)</strong> | Lokasi: 📍 @_currentLocationName
+                </MudText>
+            </div>
+
+            <div class="d-flex align-center gap-3">
+                <MudSwitch T="bool" Value="_isOnline" ValueChanged="OnToggleOnline" Color="Color.Success" Label="Status Online" />
+                <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.AddShoppingCart" OnClick="OpenRestockDialog">
+                    Input Stok Masuk (Restock)
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.PointOfSale" OnClick="OpenSaleDialog">
+                    Catat Penjualan Langsung
+                </MudButton>
+            </div>
+        </div>
+    </MudPaper>
+
+    <!-- METRICS & INCOME CARDS -->
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="3" Class="pa-4" Style="background: #0f172a; border-left: 4px solid #10b981; border-radius: 12px;">
+                <MudText Typo="Typo.caption" Style="color: #94a3b8;">SALDO DOMPET APLIKASI</MudText>
+                <MudText Typo="Typo.h5" Class="font-weight-bold mt-1" Style="color: #10b981;">
+                    Rp @(_incomeSummary?.CurrentBalance.ToString("N0") ?? "350,000")
+                </MudText>
+                <MudText Typo="Typo.caption" Style="color: #64748b;">Dapat ditarik ke rekening bank</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="3" Class="pa-4" Style="background: #0f172a; border-left: 4px solid #38bdf8; border-radius: 12px;">
+                <MudText Typo="Typo.caption" Style="color: #94a3b8;">TOTAL INCOME (PENJUALAN)</MudText>
+                <MudText Typo="Typo.h5" Class="font-weight-bold mt-1" Style="color: #38bdf8;">
+                    Rp @(_incomeSummary?.TotalIncomeAllTime.ToString("N0") ?? "420,000")
+                </MudText>
+                <MudText Typo="Typo.caption" Style="color: #64748b;">@(_incomeSummary?.TotalSalesCount ?? 14) kali transaksi berhasil</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="3" Class="pa-4" Style="background: #0f172a; border-left: 4px solid #f59e0b; border-radius: 12px;">
+                <MudText Typo="Typo.caption" Style="color: #94a3b8;">PENGELUARAN RESTOCK</MudText>
+                <MudText Typo="Typo.h5" Class="font-weight-bold mt-1" Style="color: #f59e0b;">
+                    Rp @(_incomeSummary?.TotalRestockExpenseAllTime.ToString("N0") ?? "180,000")
+                </MudText>
+                <MudText Typo="Typo.caption" Style="color: #64748b;">Total biaya pembelian stok</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="3" Class="pa-4" Style="background: #0f172a; border-left: 4px solid #a855f7; border-radius: 12px;">
+                <MudText Typo="Typo.caption" Style="color: #94a3b8;">TOTAL ITEM STOK LOKAL</MudText>
+                <MudText Typo="Typo.h5" Class="font-weight-bold mt-1" Style="color: #a855f7;">
+                    @_stocks.Count Jenis Barang
+                </MudText>
+                <MudText Typo="Typo.caption" Style="color: #ef4444;">@_stocks.Count(s => s.StockQuantity <= 0) barang habis</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudTabs Elevation="4" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" Style="background: #1e293b; border-radius: 12px;">
+        <!-- TAB 1: STOK BARANG SAAT INI -->
+        <MudTabPanel Text="Stok & Harga Jual Saya" Icon="@Icons.Material.Filled.Inventory2">
+            <MudTable Items="_stocks" Hover="true" Striped="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>Gambar</MudTh>
+                    <MudTh>Nama Barang</MudTh>
+                    <MudTh>Kategori</MudTh>
+                    <MudTh>Jumlah Stok</MudTh>
+                    <MudTh>Harga Jual / Unit</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Aksi Edit Harga</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <img src="@context.ImageUrl" style="width: 44px; height: 44px; object-fit: cover; border-radius: 8px;" alt="@context.ProductName" />
+                    </MudTd>
+                    <MudTd DataLabel="Nama">
+                        <MudText Typo="Typo.body2" Class="font-weight-bold">@context.ProductName</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Kategori">@context.Category</MudTd>
+                    <MudTd DataLabel="Stok">
+                        <MudText Typo="Typo.body2" Class="font-weight-bold" Style="@(context.StockQuantity > 0 ? "color: #4ade80;" : "color: #ef4444;")">
+                            @context.StockQuantity @context.Unit
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Harga">Rp @context.PricePerUnit.ToString("N0") / @context.Unit</MudTd>
+                    <MudTd DataLabel="Status">
+                        @if (context.StockQuantity > 0)
+                        {
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small">Tersedia</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Error" Size="Size.Small">Stok Habis</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Aksi">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small" OnClick='() => OpenEditStockDialog(context)' />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudTabPanel>
+
+        <!-- TAB 2: RIWAYAT MUTASI STOK & INCOME -->
+        <MudTabPanel Text="Riwayat Mutasi & Transaksi Income" Icon="@Icons.Material.Filled.ReceiptLong">
+            <MudTable Items="_transactions" Hover="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>Waktu</MudTh>
+                    <MudTh>Jenis Transaksi</MudTh>
+                    <MudTh>Barang</MudTh>
+                    <MudTh>Jumlah</MudTh>
+                    <MudTh>Harga Satuan</MudTh>
+                    <MudTh>Total Nominal</MudTh>
+                    <MudTh>Catatan</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Waktu">@context.TransactionDate.ToLocalTime().ToString("dd MMM yyyy HH:mm")</MudTd>
+                    <MudTd DataLabel="Jenis">
+                        @if (context.Type == "RestockIn")
+                        {
+                            <MudChip T="string" Color="Color.Warning" Size="Size.Small">📥 Restock (Masuk)</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small">📤 Terjual (Keluar + Income)</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Barang" Class="font-weight-bold">@context.ProductName</MudTd>
+                    <MudTd DataLabel="Qty">@context.Quantity</MudTd>
+                    <MudTd DataLabel="Harga Satuan">Rp @context.UnitPrice.ToString("N0")</MudTd>
+                    <MudTd DataLabel="Total">
+                        <MudText Typo="Typo.body2" Class="font-weight-bold" Style="@(context.Type == "SaleOut" ? "color: #10b981;" : "color: #f59e0b;")">
+                            @(context.Type == "SaleOut" ? "+" : "-") Rp @context.TotalAmount.ToString("N0")
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Catatan">@context.Notes</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudTabPanel>
+    </MudTabs>
+</MudContainer>
+
+<!-- DIALOG RESTOCK IN (BARANG MASUK / NYETOK) -->
+<MudDialog @bind-Visible="_showRestockDialog" Options="_dialogOpts">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color: #4ade80;">📥 Input Barang Masuk (Restock)</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudSelect T="int" Label="Pilih Barang" @bind-Value="_restockForm.ProductId" Variant="Variant.Outlined" Class="mb-3">
+            @foreach (var p in _masterProducts)
+            {
+                <MudSelectItem Value="@p.Id">@p.Name (@p.Category - @p.Unit)</MudSelectItem>
+            }
+        </MudSelect>
+        <MudNumericField T="double" Label="Jumlah Qty Dibeli" @bind-Value="_restockForm.Quantity" Variant="Variant.Outlined" Class="mb-3" Min="0.5" />
+        <MudNumericField T="decimal" Label="Harga Beli Per Satuan (Kulakan)" @bind-Value="_restockForm.UnitPrice" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField T="string" Label="Catatan (Lokasi Pasar/Kulakan)" @bind-Value="_restockForm.Notes" Variant="Variant.Outlined" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => _showRestockDialog = false">Batal</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="SaveRestock">Simpan Barang Masuk</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<!-- DIALOG PENJUALAN LANGSUNG (BARANG KELUAR & INCOME) -->
+<MudDialog @bind-Visible="_showSaleDialog" Options="_dialogOpts">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color: #f59e0b;">📤 Catat Penjualan (Stok Keluar & Saldo Direct)</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudSelect T="int" Label="Pilih Barang Terjual" @bind-Value="_saleForm.ProductId" Variant="Variant.Outlined" Class="mb-3">
+            @foreach (var s in _stocks)
+            {
+                <MudSelectItem Value="@s.ProductId">@s.ProductName (Sisa Stok: @s.StockQuantity @s.Unit)</MudSelectItem>
+            }
+        </MudSelect>
+        <MudNumericField T="double" Label="Jumlah Qty Terjual" @bind-Value="_saleForm.Quantity" Variant="Variant.Outlined" Class="mb-3" Min="0.5" />
+        <MudNumericField T="decimal" Label="Harga Jual Per Unit (Rp)" @bind-Value="_saleForm.UnitPrice" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField T="string" Label="Catatan Pembeli / Lokasi Transaksi" @bind-Value="_saleForm.Notes" Variant="Variant.Outlined" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => _showSaleDialog = false">Batal</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="SaveSale">Proses Penjualan (+Saldo)</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<!-- DIALOG EDIT HARGA / STOK -->
+<MudDialog @bind-Visible="_showEditStockDialog" Options="_dialogOpts">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit Stok & Harga Jual</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudNumericField T="double" Label="Jumlah Stok Satuan" @bind-Value="_editStockForm.Quantity" Variant="Variant.Outlined" Class="mb-3" />
+        <MudNumericField T="decimal" Label="Harga Jual Per Satuan (Rp)" @bind-Value="_editStockForm.UnitPrice" Variant="Variant.Outlined" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => _showEditStockDialog = false">Batal</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="SaveStockEdit">Simpan Perubahan</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private int _tukangSayurId => AppState.TukangSayurId ?? 1;
+    private bool _isOnline = true;
+    private string _currentLocationName = "Kelapa Gading Permai (Koordinat: -6.155, 106.902)";
+
+    private List<StockItemClientDto> _stocks = new();
+    private List<StockTransactionClientDto> _transactions = new();
+    private List<ProductClientDto> _masterProducts = new();
+    private IncomeSummaryClientDto? _incomeSummary;
+
+    private bool _showRestockDialog = false;
+    private bool _showSaleDialog = false;
+    private bool _showEditStockDialog = false;
+    private DialogOptions _dialogOpts = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+
+    private RestockForm _restockForm = new();
+    private SaleForm _saleForm = new();
+    private EditStockForm _editStockForm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _stocks = await Api.GetMyStocksAsync(_tukangSayurId);
+        _incomeSummary = await Api.GetIncomeSummaryAsync(_tukangSayurId);
+        _transactions = _incomeSummary?.RecentTransactions ?? new List<StockTransactionClientDto>();
+        _masterProducts = await Api.GetProductsAsync();
+    }
+
+    private async Task OnToggleOnline(bool val)
+    {
+        _isOnline = val;
+        await Api.ToggleOnlineAsync(_tukangSayurId, _isOnline, -6.1550, 106.9020, _currentLocationName);
+        Snackbar.Add($"Status jualan diubah menjadi: {(_isOnline ? "ONLINE" : "OFFLINE")}", _isOnline ? Severity.Success : Severity.Normal);
+    }
+
+    private void OpenRestockDialog()
+    {
+        _restockForm = new RestockForm { ProductId = _masterProducts.FirstOrDefault()?.Id ?? 1, Quantity = 10, UnitPrice = 3000m, Notes = "Kulakan Pasar Induk" };
+        _showRestockDialog = true;
+    }
+
+    private async Task SaveRestock()
+    {
+        var req = new RestockInClientRequest(_restockForm.ProductId, _restockForm.Quantity, _restockForm.UnitPrice, _restockForm.Notes);
+        var res = await Api.RestockInAsync(_tukangSayurId, req);
+        _showRestockDialog = false;
+
+        if (res != null)
+        {
+            Snackbar.Add($"Stok barang '{res.ProductName}' berhasil ditambah!", Severity.Success);
+            await LoadData();
+        }
+        else
+        {
+            Snackbar.Add("Gagal menyimpan barang masuk.", Severity.Error);
+        }
+    }
+
+    private void OpenSaleDialog()
+    {
+        var firstStock = _stocks.FirstOrDefault(s => s.StockQuantity > 0);
+        _saleForm = new SaleForm
+        {
+            ProductId = firstStock?.ProductId ?? 1,
+            Quantity = 1,
+            UnitPrice = firstStock?.PricePerUnit ?? 4000m,
+            Notes = "Penjualan langsung di perumahan"
+        };
+        _showSaleDialog = true;
+    }
+
+    private async Task SaveSale()
+    {
+        var req = new RecordSaleClientRequest(_saleForm.ProductId, _saleForm.Quantity, _saleForm.UnitPrice, _saleForm.Notes);
+        var res = await Api.RecordSaleOutAsync(_tukangSayurId, req);
+        _showSaleDialog = false;
+
+        if (res != null)
+        {
+            Snackbar.Add($"Penjualan berhasil! Stok berkurang & Saldo bertambah Rp {res.TotalAmount:N0}", Severity.Success);
+            await LoadData();
+        }
+        else
+        {
+            Snackbar.Add("Gagal mencatat penjualan. Stok tidak mencukupi.", Severity.Error);
+        }
+    }
+
+    private void OpenEditStockDialog(StockItemClientDto item)
+    {
+        _editStockForm = new EditStockForm { ProductId = item.ProductId, Quantity = item.StockQuantity, UnitPrice = item.PricePerUnit };
+        _showEditStockDialog = true;
+    }
+
+    private async Task SaveStockEdit()
+    {
+        await Api.UpdateStockAsync(_tukangSayurId, _editStockForm.ProductId, _editStockForm.Quantity, _editStockForm.UnitPrice);
+        _showEditStockDialog = false;
+        Snackbar.Add("Stok & harga jual diperbarui.", Severity.Success);
+        await LoadData();
+    }
+
+    public class RestockForm
+    {
+        public int ProductId { get; set; }
+        public double Quantity { get; set; } = 10;
+        public decimal UnitPrice { get; set; } = 3000m;
+        public string Notes { get; set; } = string.Empty;
+    }
+
+    public class SaleForm
+    {
+        public int ProductId { get; set; }
+        public double Quantity { get; set; } = 1;
+        public decimal UnitPrice { get; set; } = 4000m;
+        public string Notes { get; set; } = string.Empty;
+    }
+
+    public class EditStockForm
+    {
+        public int ProductId { get; set; }
+        public double Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+    }
+}

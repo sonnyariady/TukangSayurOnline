@@ -1,0 +1,123 @@
+@inherits LayoutComponentBase
+@inject AppStateService AppState
+@inject NavigationManager NavManager
+
+<MudThemeProvider Theme="_customTheme" IsDarkMode="true" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="3" Color="Color.Surface" Style="background: #0f172a !important; border-bottom: 1px solid #1e293b;">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h6" Class="ml-3 font-weight-bold" Style="color: #4ade80; display: flex; align-items: center; gap: 8px;">
+            🥬 Tukang Sayur Online
+        </MudText>
+        <MudSpacer />
+
+        @if (AppState.IsLoggedIn)
+        {
+            <div class="d-none d-md-flex align-center mr-3">
+                <MudChip T="string" Color="GetRoleColor(AppState.Role)" Size="Size.Small" Variant="Variant.Filled">
+                    @AppState.Role
+                </MudChip>
+                <MudText Typo="Typo.body2" Class="ml-2 font-weight-medium" Style="color: #e2e8f0;">
+                    @AppState.FullName
+                </MudText>
+            </div>
+            <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Logout" OnClick="Logout">
+                Keluar
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" StartIcon="@Icons.Material.Filled.Login" OnClick='() => NavManager.NavigateTo("/login")'>
+                Masuk / Daftar
+            </MudButton>
+        }
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always" Style="background: #1e293b; color: #f8fafc;">
+        <MudNavMenu Class="pa-2">
+            <MudText Typo="Typo.caption" Class="px-4 py-2 font-weight-bold" Style="color: #94a3b8;">MENU UTAMA</MudText>
+
+            @if (!AppState.IsLoggedIn)
+            {
+                <MudNavLink Href="/login" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Lock">Halaman Login</MudNavLink>
+                <MudNavLink Href="/register" Icon="@Icons.Material.Filled.PersonAdd">Pendaftaran Akun</MudNavLink>
+            }
+            else
+            {
+                @if (AppState.IsAdmin)
+                {
+                    <MudNavLink Href="/admin" Icon="@Icons.Material.Filled.AdminPanelSettings">Dashboard Admin</MudNavLink>
+                }
+                else if (AppState.IsTukangSayur)
+                {
+                    <MudNavLink Href="/tukangsayur" Icon="@Icons.Material.Filled.Storefront">Dashboard Tukang Sayur</MudNavLink>
+                }
+                else if (AppState.IsPelanggan)
+                {
+                    <MudNavLink Href="/pelanggan" Icon="@Icons.Material.Filled.ShoppingBag">Belanja Sayur</MudNavLink>
+                }
+            }
+
+            <MudDivider Class="my-3" Style="border-color: #334155;" />
+
+            <MudText Typo="Typo.caption" Class="px-4 py-2 font-weight-bold" Style="color: #94a3b8;">ROLE SWITCHER DEMO</MudText>
+            <MudNavLink Href="/admin" Icon="@Icons.Material.Filled.SupervisorAccount">Modul Admin</MudNavLink>
+            <MudNavLink Href="/tukangsayur" Icon="@Icons.Material.Filled.DirectionsBike">Modul Tukang Sayur</MudNavLink>
+            <MudNavLink Href="/pelanggan" Icon="@Icons.Material.Filled.Search">Modul Pelanggan</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent Class="pa-4" Style="background-color: #0b0f19; min-height: 100vh; color: #f1f5f9;">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+
+    private readonly MudTheme _customTheme = new MudTheme()
+    {
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#22c55e",
+            Secondary = "#38bdf8",
+            AppbarBackground = "#0f172a",
+            Background = "#0b0f19",
+            Surface = "#1e293b",
+            TextPrimary = "#f8fafc",
+            TextSecondary = "#94a3b8",
+            DrawerBackground = "#1e293b",
+            DrawerText = "#f8fafc",
+            Success = "#10b981",
+            Warning = "#f59e0b",
+            Error = "#ef4444"
+        }
+    };
+
+    protected override void OnInitialized()
+    {
+        AppState.OnChange += StateHasChanged;
+    }
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void Logout()
+    {
+        AppState.Logout();
+        NavManager.NavigateTo("/login");
+    }
+
+    private Color GetRoleColor(string role) => role switch
+    {
+        "Admin" => Color.Error,
+        "TukangSayur" => Color.Warning,
+        "Pelanggan" => Color.Success,
+        _ => Color.Default
+    };
+}

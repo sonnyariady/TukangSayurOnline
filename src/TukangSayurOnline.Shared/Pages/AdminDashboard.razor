@@ -1,0 +1,252 @@
+@page "/admin"
+@inject ApiService Api
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-8">
+    <div class="d-flex align-center justify-space-between mb-4">
+        <div>
+            <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #4ade80;">👑 Admin Panel - Tukang Sayur Online</MudText>
+            <MudText Typo="Typo.body2" Style="color: #94a3b8;">Kelola Master Produk, Laporan Terlaris, dan Stok Kosong Tukang Sayur</MudText>
+        </div>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddProductDialog">
+            Tambah Barang Baru
+        </MudButton>
+    </div>
+
+    <MudTabs Elevation="4" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" Style="background: #1e293b; border-radius: 12px;">
+        <!-- TAB 1: MASTER DATA BARANG -->
+        <MudTabPanel Text="Master Data Barang" Icon="@Icons.Material.Filled.Inventory">
+            <div class="d-flex align-center gap-4 mb-4">
+                <MudTextField T="string" Placeholder="Cari nama barang..." @bind-Value="_searchQuery" Immediate="true" OnKeyUp="LoadProducts" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Style="max-width: 350px;" />
+                <MudSelect T="string" Label="Kategori" Value="_selectedCategory" ValueChanged="OnCategoryChanged" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width: 220px;">
+                    <MudSelectItem Value='""'>Semua Kategori</MudSelectItem>
+                    <MudSelectItem Value='"Sayuran Hijau"'>Sayuran Hijau</MudSelectItem>
+                    <MudSelectItem Value='"Sayuran Umbi"'>Sayuran Umbi</MudSelectItem>
+                    <MudSelectItem Value='"Sayuran Buah"'>Sayuran Buah</MudSelectItem>
+                    <MudSelectItem Value='"Bumbu & Rempah"'>Bumbu & Rempah</MudSelectItem>
+                    <MudSelectItem Value='"Lauk Pauk"'>Lauk Pauk</MudSelectItem>
+                </MudSelect>
+            </div>
+
+            <MudTable Items="_products" Hover="true" Striped="true" Loading="_loading" Elevation="0" Class="mt-2">
+                <HeaderContent>
+                    <MudTh>Gambar</MudTh>
+                    <MudTh>Nama Barang</MudTh>
+                    <MudTh>Kategori</MudTh>
+                    <MudTh>Satuan</MudTh>
+                    <MudTh>Harga Default (Rp)</MudTh>
+                    <MudTh>Deskripsi</MudTh>
+                    <MudTh>Aksi</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <img src="@context.ImageUrl" style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px;" alt="@context.Name" />
+                    </MudTd>
+                    <MudTd DataLabel="Nama">
+                        <MudText Typo="Typo.body2" Class="font-weight-bold">@context.Name</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Kategori">
+                        <MudChip T="string" Color="Color.Info" Size="Size.Small">@context.Category</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Satuan">@context.Unit</MudTd>
+                    <MudTd DataLabel="Harga">Rp @context.DefaultPrice.ToString("N0")</MudTd>
+                    <MudTd DataLabel="Deskripsi">@context.Description</MudTd>
+                    <MudTd DataLabel="Aksi">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small" OnClick='() => OpenEditProductDialog(context)' />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick='() => DeleteProduct(context.Id)' />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudTabPanel>
+
+        <!-- TAB 2: LAPORAN PRODUK TERLARIS -->
+        <MudTabPanel Text="Produk Terlaris (Analistik)" Icon="@Icons.Material.Filled.TrendingUp">
+            <MudText Typo="Typo.h6" Class="mb-3 font-weight-bold" Style="color: #38bdf8;">🔥 Produk Laku Terjual dari Seluruh Tukang Sayur</MudText>
+            
+            <MudTable Items="_popularProducts" Hover="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>Peringkat</MudTh>
+                    <MudTh>Nama Barang</MudTh>
+                    <MudTh>Kategori</MudTh>
+                    <MudTh>Total Qty Terjual</MudTh>
+                    <MudTh>Total Omset Penjualan</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudAvatar Color="Color.Success" Size="Size.Small">@(_popularProducts.IndexOf(context) + 1)</MudAvatar>
+                    </MudTd>
+                    <MudTd DataLabel="Nama">
+                        <MudText Typo="Typo.body2" Class="font-weight-bold">@context.ProductName</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Kategori">@context.Category</MudTd>
+                    <MudTd DataLabel="Qty">
+                        <MudText Typo="Typo.body2" Class="font-weight-bold" Style="color: #4ade80;">@context.TotalQuantitySold</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Omset">Rp @context.TotalRevenue.ToString("N0")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudTabPanel>
+
+        <!-- TAB 3: MONITORING STOK KOSONG -->
+        <MudTabPanel Text="Barang Kosong Tukang Sayur" Icon="@Icons.Material.Filled.Warning">
+            <MudText Typo="Typo.h6" Class="mb-3 font-weight-bold" Style="color: #f59e0b;">⚠️ Daftar Barang Kosong di Lapak Tukang Sayur</MudText>
+            
+            <MudTable Items="_emptyStocks" Hover="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>Toko / Lapak</MudTh>
+                    <MudTh>Pemilik Lapak</MudTh>
+                    <MudTh>Barang Kosong</MudTh>
+                    <MudTh>Kategori</MudTh>
+                    <MudTh>Status Stok</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Toko">
+                        <MudText Typo="Typo.body2" Class="font-weight-bold">@context.ShopName</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Pemilik">@context.VendorName</MudTd>
+                    <MudTd DataLabel="Barang">@context.ProductName</MudTd>
+                    <MudTd DataLabel="Kategori">@context.Category</MudTd>
+                    <MudTd DataLabel="Status">
+                        <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">KOSONG (0)</MudChip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudTabPanel>
+    </MudTabs>
+</MudContainer>
+
+<!-- DIALOG INPUT / EDIT BARANG -->
+<MudDialog @bind-Visible="_showProductDialog" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_isEditMode ? "Edit Barang" : "Tambah Barang Baru")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField T="string" Label="Nama Barang" @bind-Value="_formProduct.Name" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudSelect T="string" Label="Kategori" @bind-Value="_formProduct.Category" Variant="Variant.Outlined" Class="mb-3" Required="true">
+            <MudSelectItem Value='"Sayuran Hijau"'>Sayuran Hijau</MudSelectItem>
+            <MudSelectItem Value='"Sayuran Umbi"'>Sayuran Umbi</MudSelectItem>
+            <MudSelectItem Value='"Sayuran Buah"'>Sayuran Buah</MudSelectItem>
+            <MudSelectItem Value='"Bumbu & Rempah"'>Bumbu & Rempah</MudSelectItem>
+            <MudSelectItem Value='"Lauk Pauk"'>Lauk Pauk</MudSelectItem>
+        </MudSelect>
+        <MudTextField T="string" Label="Satuan (kg, ikat, papan, pcs)" @bind-Value="_formProduct.Unit" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudNumericField T="decimal" Label="Harga Acuan Default (Rp)" @bind-Value="_formProduct.DefaultPrice" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField T="string" Label="URL Gambar" @bind-Value="_formProduct.ImageUrl" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField T="string" Label="Deskripsi Singkat" @bind-Value="_formProduct.Description" Variant="Variant.Outlined" Class="mb-3" Lines="2" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => _showProductDialog = false">Batal</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="SaveProduct">Simpan Data</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<ProductClientDto> _products = new();
+    private List<PopularProductReportClientDto> _popularProducts = new();
+    private List<EmptyStockReportClientDto> _emptyStocks = new();
+    
+    private bool _loading = false;
+    private string _searchQuery = string.Empty;
+    private string _selectedCategory = string.Empty;
+
+    private bool _showProductDialog = false;
+    private bool _isEditMode = false;
+    private ProductForm _formProduct = new();
+    private DialogOptions _dialogOptions = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+        await LoadReports();
+    }
+
+    private async Task LoadProducts()
+    {
+        _loading = true;
+        _products = await Api.GetProductsAsync(_selectedCategory, _searchQuery);
+        _loading = false;
+    }
+
+    private async Task OnCategoryChanged(string category)
+    {
+        _selectedCategory = category;
+        await LoadProducts();
+    }
+
+    private async Task LoadReports()
+    {
+        _popularProducts = await Api.GetPopularProductsAsync();
+        _emptyStocks = await Api.GetEmptyStockReportsAsync();
+    }
+
+    private void OpenAddProductDialog()
+    {
+        _isEditMode = false;
+        _formProduct = new ProductForm { Category = "Sayuran Hijau", Unit = "ikat", DefaultPrice = 5000m };
+        _showProductDialog = true;
+    }
+
+    private void OpenEditProductDialog(ProductClientDto p)
+    {
+        _isEditMode = true;
+        _formProduct = new ProductForm
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Category = p.Category,
+            Unit = p.Unit,
+            DefaultPrice = p.DefaultPrice,
+            ImageUrl = p.ImageUrl,
+            Description = p.Description
+        };
+        _showProductDialog = true;
+    }
+
+    private async Task SaveProduct()
+    {
+        if (string.IsNullOrWhiteSpace(_formProduct.Name))
+        {
+            Snackbar.Add("Nama barang wajib diisi.", Severity.Warning);
+            return;
+        }
+
+        if (_isEditMode)
+        {
+            var req = new UpdateProductClientRequest(_formProduct.Id, _formProduct.Name, _formProduct.Category, _formProduct.Unit, _formProduct.Description, _formProduct.ImageUrl, _formProduct.DefaultPrice);
+            await Api.UpdateProductAsync(_formProduct.Id, req);
+            Snackbar.Add("Barang berhasil diperbarui.", Severity.Success);
+        }
+        else
+        {
+            var req = new CreateProductClientRequest(_formProduct.Name, _formProduct.Category, _formProduct.Unit, _formProduct.Description, _formProduct.ImageUrl, _formProduct.DefaultPrice);
+            await Api.CreateProductAsync(req);
+            Snackbar.Add("Barang baru berhasil ditambahkan.", Severity.Success);
+        }
+
+        _showProductDialog = false;
+        await LoadProducts();
+    }
+
+    private async Task DeleteProduct(int id)
+    {
+        var confirm = await DialogService.ShowMessageBox("Konfirmasi Hapus", "Yakin ingin menghapus produk ini?", yesText: "Hapus", cancelText: "Batal");
+        if (confirm == true)
+        {
+            await Api.DeleteProductAsync(id);
+            Snackbar.Add("Produk terhapus.", Severity.Success);
+            await LoadProducts();
+        }
+    }
+
+    public class ProductForm
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Category { get; set; } = "Sayuran Hijau";
+        public string Unit { get; set; } = "kg";
+        public decimal DefaultPrice { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+}

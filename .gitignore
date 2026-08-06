@@ -1,0 +1,47 @@
+## .NET / C# gitignore
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.mono
+
+## User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Lg]og/
+[Lg]ogs/
+
+## MAUI / Mobile temp build
+.app/
+*.apk
+*.aab
+*.appxbundle
+*.msixbundle
+
+## Environment / Local configs
+appsettings.Development.json
+appsettings.Local.json
+
+## Antigravity / IDE temp files
+.gemini/
+.system_generated/

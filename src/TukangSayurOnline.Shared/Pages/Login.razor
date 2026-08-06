@@ -1,0 +1,113 @@
+@page "/"
+@page "/login"
+@inject ApiService Api
+@inject AppStateService AppState
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudCard Elevation="6" Class="pa-6" Style="background: #1e293b; border-radius: 16px; border: 1px solid #334155;">
+        <MudCardHeader Class="flex-column align-center text-center">
+            <div style="font-size: 3rem; margin-bottom: 8px;">🥬</div>
+            <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #4ade80;">Tukang Sayur Online</MudText>
+            <MudText Typo="Typo.body2" Style="color: #94a3b8;">Silakan masuk untuk mengakses sistem</MudText>
+        </MudCardHeader>
+
+        <MudCardContent>
+            <EditForm Model="_loginModel" OnValidSubmit="HandleLogin">
+                <DataAnnotationsValidator />
+                
+                <MudTextField T="string" Label="Alamat Email" @bind-Value="_loginModel.Email" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Email" />
+
+                <MudTextField T="string" Label="Password" @bind-Value="_loginModel.Password" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" />
+
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">@_errorMessage</MudAlert>
+                }
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Success" FullWidth="true" Size="Size.Large" Class="mt-2 font-weight-bold" Disabled="_loading">
+                    @if (_loading)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2">Memproses...</MudText>
+                    }
+                    else
+                    {
+                        <span>Masuk Sekarang</span>
+                    }
+                </MudButton>
+            </EditForm>
+
+            <MudDivider Class="my-6" Style="border-color: #334155;" />
+
+            <MudText Typo="Typo.caption" Class="font-weight-bold d-block text-center mb-3" Style="color: #94a3b8;">AKSES CEPAT AKUN DEMO</MudText>
+            <MudGrid>
+                <MudItem xs="4">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" FullWidth="true" Size="Size.Small" OnClick='() => QuickLogin("admin@tukangsayur.com", "Admin123!")'>
+                        Admin
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Warning" FullWidth="true" Size="Size.Small" OnClick='() => QuickLogin("mang.udin@gmail.com", "Udin123!")'>
+                        Tukang Sayur
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Success" FullWidth="true" Size="Size.Small" OnClick='() => QuickLogin("pelanggan@gmail.com", "Pelanggan123!")'>
+                        Pelanggan
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+
+        <MudCardActions Class="justify-center">
+            <MudText Typo="Typo.body2" Style="color: #94a3b8;">Belum punya akun?</MudText>
+            <MudLink Href="/register" Color="Color.Success" Class="ml-2 font-weight-bold">Daftar Sekarang</MudLink>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private LoginForm _loginModel = new() { Email = "admin@tukangsayur.com", Password = "Admin123!" };
+    private bool _loading = false;
+    private string _errorMessage = string.Empty;
+
+    private async Task QuickLogin(string email, string password)
+    {
+        _loginModel.Email = email;
+        _loginModel.Password = password;
+        await HandleLogin();
+    }
+
+    private async Task HandleLogin()
+    {
+        _loading = true;
+        _errorMessage = string.Empty;
+
+        var req = new LoginRequestDto(_loginModel.Email, _loginModel.Password);
+        var res = await Api.LoginAsync(req);
+        _loading = false;
+
+        if (res != null && res.Success)
+        {
+            AppState.SetUser(res.Token, res.UserId, res.FullName, res.Email, res.Role, res.TukangSayurId);
+            Snackbar.Add($"Selamat datang, {res.FullName}!", Severity.Success);
+
+            if (res.Role == "Admin") NavManager.NavigateTo("/admin");
+            else if (res.Role == "TukangSayur") NavManager.NavigateTo("/tukangsayur");
+            else NavManager.NavigateTo("/pelanggan");
+        }
+        else
+        {
+            _errorMessage = res?.Message ?? "Gagal login. Periksa koneksi backend.";
+            Snackbar.Add(_errorMessage, Severity.Error);
+        }
+    }
+
+    public class LoginForm
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

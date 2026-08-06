@@ -1,0 +1,116 @@
+@page "/register"
+@inject ApiService Api
+@inject AppStateService AppState
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-6 mb-8">
+    <MudCard Elevation="6" Class="pa-6" Style="background: #1e293b; border-radius: 16px; border: 1px solid #334155;">
+        <MudCardHeader Class="flex-column align-center text-center">
+            <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #4ade80;">Pendaftaran Akun Baru</MudText>
+            <MudText Typo="Typo.body2" Style="color: #94a3b8;">Daftar sebagai Pelanggan atau Tukang Sayur</MudText>
+        </MudCardHeader>
+
+        <MudCardContent>
+            <MudRadioGroup T="int" Value="_roleIndex" ValueChanged="OnRoleChanged" Class="d-flex justify-center mb-4">
+                <MudRadio Value="2" Color="Color.Success">Pelanggan</MudRadio>
+                <MudRadio Value="1" Color="Color.Warning" Class="ml-4">Tukang Sayur</MudRadio>
+            </MudRadioGroup>
+
+            <EditForm Model="_model" OnValidSubmit="HandleRegister">
+                <DataAnnotationsValidator />
+
+                <MudTextField T="string" Label="Nama Lengkap" @bind-Value="_model.FullName" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" Required="true" />
+                <MudTextField T="string" Label="Email" @bind-Value="_model.Email" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" Required="true" />
+                <MudTextField T="string" Label="Nomor Telepon / WA" @bind-Value="_model.Phone" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" Required="true" />
+                <MudTextField T="string" Label="Password" @bind-Value="_model.Password" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" Required="true" />
+
+                @if (_roleIndex == 1)
+                {
+                    <MudTextField T="string" Label="Nama Toko / Lapak Sayur" @bind-Value="_model.ShopName" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" Required="true" />
+                }
+
+                <MudTextField T="string" Label="Alamat Domisili / Lokasi Jualan" @bind-Value="_model.Address" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" Required="true" Lines="2" />
+
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">@_errorMessage</MudAlert>
+                }
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Success" FullWidth="true" Size="Size.Large" Class="mt-2 font-weight-bold" Disabled="_loading">
+                    @if (_loading)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2">Mendaftarkan...</MudText>
+                    }
+                    else
+                    {
+                        <span>Daftar Akun</span>
+                    }
+                </MudButton>
+            </EditForm>
+        </MudCardContent>
+
+        <MudCardActions Class="justify-center">
+            <MudText Typo="Typo.body2" Style="color: #94a3b8;">Sudah punya akun?</MudText>
+            <MudLink Href="/login" Color="Color.Success" Class="ml-2 font-weight-bold">Masuk di sini</MudLink>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private int _roleIndex = 2; // Default Pelanggan
+    private RegisterForm _model = new();
+    private bool _loading = false;
+    private string _errorMessage = string.Empty;
+
+    private void OnRoleChanged(int newRole)
+    {
+        _roleIndex = newRole;
+    }
+
+    private async Task HandleRegister()
+    {
+        _loading = true;
+        _errorMessage = string.Empty;
+
+        var req = new RegisterRequestDto(
+            _model.FullName,
+            _model.Email,
+            _model.Phone,
+            _model.Password,
+            _roleIndex,
+            _model.ShopName,
+            _model.Address,
+            -6.2088,
+            106.8456
+        );
+
+        var res = await Api.RegisterAsync(req);
+        _loading = false;
+
+        if (res != null && res.Success)
+        {
+            AppState.SetUser(res.Token, res.UserId, res.FullName, res.Email, res.Role, res.TukangSayurId);
+            Snackbar.Add("Registrasi berhasil!", Severity.Success);
+
+            if (res.Role == "TukangSayur") NavManager.NavigateTo("/tukangsayur");
+            else NavManager.NavigateTo("/pelanggan");
+        }
+        else
+        {
+            _errorMessage = res?.Message ?? "Registrasi gagal. Periksa data Anda.";
+            Snackbar.Add(_errorMessage, Severity.Error);
+        }
+    }
+
+    public class RegisterForm
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string ShopName { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+    }
+}
