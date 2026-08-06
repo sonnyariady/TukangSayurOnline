@@ -2,10 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <RazorLangVersion>Latest</RazorLangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
 
   <ItemGroup>
     <SupportedPlatform Include="browser" />

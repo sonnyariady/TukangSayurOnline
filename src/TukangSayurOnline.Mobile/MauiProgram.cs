@@ -1,3 +1,5 @@
+using System.Reflection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using TukangSayurOnline.Shared.Services;
@@ -16,6 +18,15 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
             });
 
+        // Load embedded appsettings.json stream into Configuration
+        var assembly = Assembly.GetExecutingAssembly();
+        using var stream = assembly.GetManifestResourceStream("TukangSayurOnline.Mobile.appsettings.json");
+        if (stream != null)
+        {
+            var config = new ConfigurationBuilder().AddJsonStream(stream).Build();
+            builder.Configuration.AddConfiguration(config);
+        }
+
         builder.Services.AddMauiBlazorWebView();
 
         // Add MudBlazor Services 7.4.0
@@ -25,7 +36,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<AppStateService>();
 
         // Dynamic Platform-Aware API Base URL Resolution
-        var apiBaseUrl = GetPlatformApiBaseUrl();
+        var apiBaseUrl = GetPlatformApiBaseUrl(builder.Configuration);
         builder.Services.AddScoped(sp => new HttpClient
         {
             BaseAddress = new Uri(apiBaseUrl)
@@ -40,14 +51,15 @@ public static class MauiProgram
         return builder.Build();
     }
 
-    private static string GetPlatformApiBaseUrl()
+    private static string GetPlatformApiBaseUrl(IConfiguration config)
     {
+        var customUrl = config["ApiBaseUrl"];
+
 #if ANDROID
-        // Android Emulator uses 10.0.2.2 to access host machine localhost:5000
-        return "http://10.0.2.2:5000/";
+        var emulatorUrl = config["AndroidEmulatorBaseUrl"];
+        return !string.IsNullOrEmpty(emulatorUrl) ? emulatorUrl : "http://10.0.2.2:5000/";
 #else
-        // Windows Desktop, MacCatalyst, iOS Simulator
-        return "http://localhost:5000/";
+        return !string.IsNullOrEmpty(customUrl) ? customUrl : "http://localhost:5000/";
 #endif
     }
 }
