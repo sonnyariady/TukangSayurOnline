@@ -1,9 +1,19 @@
 @using TukangSayurOnline.Shared
 
-<Router AppAssembly="@typeof(TukangSayurOnline.Shared.Routes).Assembly">
+<Router AppAssembly="@typeof(TukangSayurOnline.Shared.Routes).Assembly" AdditionalAssemblies="new[] { typeof(App).Assembly }">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(TukangSayurOnline.Shared.Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        <ErrorBoundary>
+            <ChildContent>
+                <RouteView RouteData="@routeData" DefaultLayout="@typeof(TukangSayurOnline.Shared.Layout.MainLayout)" />
+                <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+            </ChildContent>
+            <ErrorContent Context="ex">
+                <div style="padding: 20px; color: #ef4444; background: #0f172a; min-height: 100vh; overflow: auto;">
+                    <h3 style="color: #f8fafc; margin-bottom: 10px;">⚠️ Error Terjadi:</h3>
+                    <pre style="white-space: pre-wrap; font-size: 12px; color: #fca5a5;">@ex.ToString()</pre>
+                </div>
+            </ErrorContent>
+        </ErrorBoundary>
     </Found>
     <NotFound>
         <LayoutView Layout="@typeof(TukangSayurOnline.Shared.Layout.MainLayout)">
