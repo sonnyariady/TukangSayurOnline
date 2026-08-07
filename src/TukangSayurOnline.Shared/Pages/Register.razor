@@ -4,18 +4,20 @@
 @inject NavigationManager NavManager
 @inject ISnackbar Snackbar
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="mt-6 mb-8">
-    <MudCard Elevation="6" Class="pa-6" Style="background: #1e293b; border-radius: 16px; border: 1px solid #334155;">
-        <MudCardHeader Class="flex-column align-center text-center">
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-2 mt-sm-6 mb-8 px-3">
+    <MudCard Elevation="6" Class="pa-4 pa-sm-6" Style="background: #1e293b; border-radius: 16px; border: 1px solid #334155;">
+        <MudCardHeader Class="flex-column align-center text-center pa-2 pb-4">
             <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #4ade80;">Pendaftaran Akun Baru</MudText>
             <MudText Typo="Typo.body2" Style="color: #94a3b8;">Daftar sebagai Pelanggan atau Tukang Sayur</MudText>
         </MudCardHeader>
 
-        <MudCardContent>
-            <MudRadioGroup T="int" Value="_roleIndex" ValueChanged="OnRoleChanged" Class="d-flex justify-center mb-4">
-                <MudRadio Value="2" Color="Color.Success">Pelanggan</MudRadio>
-                <MudRadio Value="1" Color="Color.Warning" Class="ml-4">Tukang Sayur</MudRadio>
-            </MudRadioGroup>
+        <MudCardContent Class="pa-2 pa-sm-4">
+            <div class="d-flex justify-center align-center gap-4 mb-4 pa-2" style="background: #0f172a; border-radius: 12px; border: 1px solid #334155;">
+                <MudRadioGroup T="int" Value="_roleIndex" ValueChanged="OnRoleChanged" Class="d-flex flex-row justify-center align-center gap-4">
+                    <MudRadio Value="2" Color="Color.Success" Size="Size.Medium"><span style="font-weight: 600; color: #f8fafc;">Pelanggan</span></MudRadio>
+                    <MudRadio Value="1" Color="Color.Warning" Size="Size.Medium"><span style="font-weight: 600; color: #f8fafc;">Tukang Sayur</span></MudRadio>
+                </MudRadioGroup>
+            </div>
 
             <EditForm Model="_model" OnValidSubmit="HandleRegister">
                 <DataAnnotationsValidator />

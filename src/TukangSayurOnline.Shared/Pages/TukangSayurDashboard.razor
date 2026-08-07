@@ -5,10 +5,10 @@
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-8">
     <!-- VENDOR HEADER & ONLINE TOGGLE -->
-    <MudPaper Elevation="4" Class="pa-6 mb-6" Style="background: #1e293b; border-radius: 16px; border: 1px solid #334155;">
+    <MudPaper Elevation="4" Class="pa-4 pa-sm-6 mb-6" Style="background: #1e293b; border-radius: 16px; border: 1px solid #334155;">
         <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between gap-4">
             <div>
-                <div class="d-flex align-center gap-2">
+                <div class="d-flex align-center gap-2 flex-wrap">
                     <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #f59e0b;">🚴 Lapak Tukang Sayur</MudText>
                     <MudChip T="string" Color="_isOnline ? Color.Success : Color.Dark" Size="Size.Small" Variant="Variant.Filled">
                         @(_isOnline ? "ONLINE - SIAP JUALAN" : "OFFLINE")
@@ -19,13 +19,13 @@
                 </MudText>
             </div>
 
-            <div class="d-flex align-center gap-3">
+            <div class="d-flex flex-column flex-sm-row align-start align-sm-center gap-3 w-100 w-md-auto mt-2 mt-md-0 flex-wrap">
                 <MudSwitch T="bool" Value="_isOnline" ValueChanged="OnToggleOnline" Color="Color.Success" Label="Status Online" />
-                <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.AddShoppingCart" OnClick="OpenRestockDialog">
-                    Input Stok Masuk (Restock)
+                <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.AddShoppingCart" OnClick="OpenRestockDialog" Class="w-100 w-sm-auto" Style="white-space: nowrap;">
+                    Input Stok (Restock)
                 </MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.PointOfSale" OnClick="OpenSaleDialog">
-                    Catat Penjualan Langsung
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" StartIcon="@Icons.Material.Filled.PointOfSale" OnClick="OpenSaleDialog" Class="w-100 w-sm-auto" Style="white-space: nowrap;">
+                    Catat Penjualan
                 </MudButton>
             </div>
         </div>
