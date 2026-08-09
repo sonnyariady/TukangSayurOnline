@@ -53,13 +53,19 @@ public static class MauiProgram
 
     private static string GetPlatformApiBaseUrl(IConfiguration config)
     {
-        var customUrl = config["ApiBaseUrl"];
-
+#if DEBUG
+        // Mode DEBUG: Menggunakan URL Lokal untuk testing
 #if ANDROID
         var emulatorUrl = config["AndroidEmulatorBaseUrl"];
         return !string.IsNullOrEmpty(emulatorUrl) ? emulatorUrl : "http://10.0.2.2:5000/";
 #else
+        var customUrl = config["ApiBaseUrl"];
         return !string.IsNullOrEmpty(customUrl) ? customUrl : "http://localhost:5000/";
+#endif
+#else
+        // Mode RELEASE: Menggunakan URL API yang sudah di-publish ke MonsterASP (HTTPS)
+        var prodUrl = config["ProductionApiUrl"];
+        return !string.IsNullOrEmpty(prodUrl) ? prodUrl : "https://tukangsayur-api.tryasp.net/";
 #endif
     }
 }
