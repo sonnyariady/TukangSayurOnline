@@ -1,4 +1,6 @@
+using System;
 using System.Globalization;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.JSInterop;
 
@@ -14,6 +16,44 @@ public static class MapLauncher
         var destLngStr = destLng.ToString(CultureInfo.InvariantCulture);
 
         var url = $"https://www.google.com/maps/dir/?api=1&origin={originStr},{originLngStr}&destination={destStr},{destLngStr}&travelmode=driving";
-        await js.InvokeVoidAsync("open", url, "_blank");
+
+        try
+        {
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var launcherType = asm.GetType("Microsoft.Maui.ApplicationModel.Launcher");
+                if (launcherType != null)
+                {
+                    var defaultProp = launcherType.GetProperty("Default", BindingFlags.Public | BindingFlags.Static);
+                    var launcherInstance = defaultProp?.GetValue(null);
+                    if (launcherInstance != null)
+                    {
+                        var openMethod = launcherInstance.GetType().GetMethod("OpenAsync", new[] { typeof(Uri) });
+                        if (openMethod != null)
+                        {
+                            var task = openMethod.Invoke(launcherInstance, new object[] { new Uri(url) }) as Task;
+                            if (task != null)
+                            {
+                                await task;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Fallback
+        }
+
+        try
+        {
+            await js.InvokeVoidAsync("openMapUrl", url);
+        }
+        catch
+        {
+            // Fallback
+        }
     }
 }

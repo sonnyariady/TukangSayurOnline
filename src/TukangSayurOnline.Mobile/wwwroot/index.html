@@ -55,6 +55,13 @@
                 }
             });
         };
+        window.openMapUrl = function (url) {
+            try {
+                window.location.href = url;
+            } catch (e) {
+                window.open(url, '_blank');
+            }
+        };
     </script>
 
     <div id="blazor-error-ui">

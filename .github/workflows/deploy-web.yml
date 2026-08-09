@@ -1,0 +1,57 @@
+name: Deploy TukangSayurOnline.Web to MonsterASP
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/TukangSayurOnline.Web/**'
+      - 'src/TukangSayurOnline.Shared/**'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore src/TukangSayurOnline.Web/TukangSayurOnline.Web.csproj
+
+      - name: Build & Publish Web
+        run: |
+          dotnet publish src/TukangSayurOnline.Web/TukangSayurOnline.Web.csproj -c Release -o ./publish-web
+          mkdir -p ./offline-dir
+          echo '<!DOCTYPE html><html><body><h2>Maintenance</h2></body></html>' > ./offline-dir/app_offline.htm
+
+      - name: Upload app_offline.htm to stop IIS process
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.MONSTERASP_WEB_FTP_SERVER || 'site84224.siteasp.net' }}
+          username: ${{ secrets.MONSTERASP_WEB_FTP_USERNAME || 'site84224' }}
+          password: ${{ secrets.MONSTERASP_WEB_FTP_PASSWORD || 'Nf4%+9Azt=8Z' }}
+          local-dir: ./offline-dir/
+          server-dir: /wwwroot/
+
+      - name: Sync FTP to MonsterASP Web
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.MONSTERASP_WEB_FTP_SERVER || 'site84224.siteasp.net' }}
+          username: ${{ secrets.MONSTERASP_WEB_FTP_USERNAME || 'site84224' }}
+          password: ${{ secrets.MONSTERASP_WEB_FTP_PASSWORD || 'Nf4%+9Azt=8Z' }}
+          local-dir: ./publish-web/
+          server-dir: /wwwroot/
+          dangerous-clean-slate: false
+
+      - name: Remove app_offline.htm to restart IIS
+        if: always()
+        run: |
+          curl -u "${{ secrets.MONSTERASP_WEB_FTP_USERNAME || 'site84224' }}:${{ secrets.MONSTERASP_WEB_FTP_PASSWORD || 'Nf4%+9Azt=8Z' }}" -Q "DELE /wwwroot/app_offline.htm" "ftp://${{ secrets.MONSTERASP_WEB_FTP_SERVER || 'site84224.siteasp.net' }}" || true

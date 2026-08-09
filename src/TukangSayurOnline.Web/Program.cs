@@ -14,7 +14,11 @@ builder.Services.AddMudServices();
 // Register App State, GPS Service, and API Service
 builder.Services.AddSingleton<AppStateService>();
 builder.Services.AddScoped<IGpsService, TukangSayurOnline.Web.Services.WebGpsService>();
-var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000/";
+
+var apiBaseUrl = builder.Environment.IsDevelopment()
+    ? (builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000/")
+    : (builder.Configuration["ProductionApiUrl"] ?? builder.Configuration["ApiBaseUrl"] ?? "http://tukangsayur-api.tryasp.net/");
+
 builder.Services.AddScoped(sp => new HttpClient
 {
     BaseAddress = new Uri(apiBaseUrl.EndsWith("/") ? apiBaseUrl : apiBaseUrl + "/")
