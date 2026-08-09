@@ -185,3 +185,29 @@ public record EmptyStockReportDto(
     string ProductName,
     string Category
 );
+
+public record NearbyVendorSummaryDto(
+    int TukangSayurId,
+    string ShopName,
+    string OwnerName,
+    string Phone,
+    double Latitude,
+    double Longitude,
+    double DistanceKm,
+    bool IsOnline,
+    string LocationName,
+    int TotalProductsCount
+);
+
+public record VendorCatalogDto(
+    int TukangSayurId,
+    string ShopName,
+    string OwnerName,
+    string Phone,
+    double Latitude,
+    double Longitude,
+    double DistanceKm,
+    bool IsOnline,
+    string LocationName,
+    List<StockItemDto> Products
+);

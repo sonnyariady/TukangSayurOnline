@@ -251,9 +251,80 @@ public class ApiService
             return true;
         }
     }
+
+    public async Task<List<OrderClientDto>> GetVendorOrdersAsync(int tukangSayurId)
+    {
+        try
+        {
+            EnsureAuthHeader();
+            var orders = await _http.GetFromJsonAsync<List<OrderClientDto>>($"api/tukangsayur/{tukangSayurId}/orders");
+            return orders ?? new List<OrderClientDto>();
+        }
+        catch
+        {
+            return new List<OrderClientDto>();
+        }
+    }
+
+    public async Task<bool> CompleteVendorOrderAsync(int tukangSayurId, int orderId)
+    {
+        try
+        {
+            EnsureAuthHeader();
+            var res = await _http.PostAsync($"api/tukangsayur/{tukangSayurId}/orders/{orderId}/complete", null);
+            return res.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> CancelVendorOrderAsync(int tukangSayurId, int orderId)
+    {
+        try
+        {
+            EnsureAuthHeader();
+            var res = await _http.PostAsync($"api/tukangsayur/{tukangSayurId}/orders/{orderId}/cancel", null);
+            return res.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
     #endregion
 
     #region Pelanggan
+    public async Task<List<NearbyVendorSummaryClientDto>> GetNearbyVendorsAsync(double lat, double lng)
+    {
+        try
+        {
+            EnsureAuthHeader();
+            var url = $"api/pelanggan/nearby-vendors?userLat={lat}&userLng={lng}";
+            var result = await _http.GetFromJsonAsync<List<NearbyVendorSummaryClientDto>>(url);
+            return result ?? new List<NearbyVendorSummaryClientDto>();
+        }
+        catch
+        {
+            return GetFallbackNearbyVendors();
+        }
+    }
+
+    public async Task<VendorCatalogClientDto?> GetVendorCatalogAsync(int vendorId, double lat, double lng)
+    {
+        try
+        {
+            EnsureAuthHeader();
+            var url = $"api/pelanggan/vendors/{vendorId}/catalog?userLat={lat}&userLng={lng}";
+            return await _http.GetFromJsonAsync<VendorCatalogClientDto>(url);
+        }
+        catch
+        {
+            return GetFallbackVendorCatalog(vendorId);
+        }
+    }
+
     public async Task<List<NearbyVendorProductClientDto>> SearchNearbyProductsAsync(double lat, double lng, string? query, string? category)
     {
         try
@@ -316,6 +387,23 @@ public class ApiService
     #endregion
 
     #region Fallback Data Helpers
+    private List<NearbyVendorSummaryClientDto> GetFallbackNearbyVendors()
+    {
+        return new List<NearbyVendorSummaryClientDto>
+        {
+            new(1, "Sayur Segar Mang Udin", "Mang Udin Sutarman", "081987654321", -6.1550, 106.9020, 1.2, true, "Kelapa Gading Permai", 6),
+            new(2, "Lapak Sayur Bang Budi", "Bang Budi Santoso", "081777888999", -6.2250, 106.8550, 3.5, true, "Tebet Eco Park", 6)
+        };
+    }
+
+    private VendorCatalogClientDto GetFallbackVendorCatalog(int vendorId)
+    {
+        var stocks = GetFallbackStocks();
+        return new VendorCatalogClientDto(
+            1, "Sayur Segar Mang Udin", "Mang Udin Sutarman", "081987654321", -6.1550, 106.9020, 1.2, true, "Kelapa Gading Permai", stocks
+        );
+    }
+
     private List<ProductClientDto> GetFallbackProducts()
     {
         return new List<ProductClientDto>
@@ -371,6 +459,18 @@ public record IncomeSummaryClientDto(decimal CurrentBalance, decimal TotalIncome
 
 public record PopularProductReportClientDto(int ProductId, string ProductName, string Category, double TotalQuantitySold, decimal TotalRevenue);
 public record EmptyStockReportClientDto(int TukangSayurId, string ShopName, string VendorName, int ProductId, string ProductName, string Category);
+
+public record NearbyVendorSummaryClientDto(
+    int TukangSayurId, string ShopName, string OwnerName, string Phone,
+    double Latitude, double Longitude, double DistanceKm, bool IsOnline,
+    string LocationName, int TotalProductsCount
+);
+
+public record VendorCatalogClientDto(
+    int TukangSayurId, string ShopName, string OwnerName, string Phone,
+    double Latitude, double Longitude, double DistanceKm, bool IsOnline,
+    string LocationName, List<StockItemClientDto> Products
+);
 
 public record NearbyVendorProductClientDto(
     int TukangSayurId, string ShopName, string VendorName, string VendorPhone,

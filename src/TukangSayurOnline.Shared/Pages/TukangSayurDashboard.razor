@@ -75,17 +75,89 @@
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudPaper Elevation="3" Class="pa-4" Style="background: #0f172a; border-left: 4px solid #a855f7; border-radius: 12px;">
-                <MudText Typo="Typo.caption" Style="color: #94a3b8;">TOTAL ITEM STOK LOKAL</MudText>
+                <MudText Typo="Typo.caption" Style="color: #94a3b8;">BOOKING MASUK (PENDING)</MudText>
                 <MudText Typo="Typo.h5" Class="font-weight-bold mt-1" Style="color: #a855f7;">
-                    @_stocks.Count Jenis Barang
+                    @_vendorOrders.Count(o => o.Status == "Pending") Booking
                 </MudText>
-                <MudText Typo="Typo.caption" Style="color: #ef4444;">@_stocks.Count(s => s.StockQuantity <= 0) barang habis</MudText>
+                <MudText Typo="Typo.caption" Style="color: #64748b;">Menunggu COD & Penyelesaian</MudText>
             </MudPaper>
         </MudItem>
     </MudGrid>
 
     <MudTabs Elevation="4" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" Style="background: #1e293b; border-radius: 12px;">
-        <!-- TAB 1: STOK BARANG SAAT INI -->
+        <!-- TAB 1: BOOKING MASUK (PESANAN COD) -->
+        <MudTabPanel Text="📋 Booking Masuk (COD)" Icon="@Icons.Material.Filled.Assignment">
+            @if (_vendorOrders.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="my-4">
+                    Belum ada pesanan booking masuk dari pelanggan.
+                </MudAlert>
+            }
+            else
+            {
+                <MudTable Items="_vendorOrders" Hover="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>ID Booking</MudTh>
+                        <MudTh>Waktu</MudTh>
+                        <MudTh>Pelanggan</MudTh>
+                        <MudTh>Rincian Pesanan</MudTh>
+                        <MudTh>Total COD</MudTh>
+                        <MudTh>Titik Pertemuan</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Aksi Transaksi</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="ID">#BKG-@context.Id</MudTd>
+                        <MudTd DataLabel="Waktu">@context.OrderDate.ToLocalTime().ToString("dd MMM HH:mm")</MudTd>
+                        <MudTd DataLabel="Pelanggan" Class="font-weight-bold" Style="color: #38bdf8;">@context.CustomerName</MudTd>
+                        <MudTd DataLabel="Rincian">
+                            @foreach (var item in context.Items)
+                            {
+                                <div>• @item.ProductName (@item.Quantity @item.Unit)</div>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Total COD">
+                            <MudText Typo="Typo.body2" Class="font-weight-bold" Style="color: #10b981;">
+                                Rp @context.TotalAmount.ToString("N0")
+                            </MudText>
+                        </MudTd>
+                        <MudTd DataLabel="Pertemuan">📍 @context.MeetAddress</MudTd>
+                        <MudTd DataLabel="Status">
+                            @if (context.Status == "Pending")
+                            {
+                                <MudChip T="string" Color="Color.Warning" Size="Size.Small" Variant="Variant.Filled">⏳ PENDING COD</MudChip>
+                            }
+                            else if (context.Status == "Completed")
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">✅ SELESAI COD</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">❌ DIBATALKAN</MudChip>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Aksi">
+                            <div class="d-flex flex-column gap-1">
+                                @if (context.Status == "Pending")
+                                {
+                                    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" OnClick="() => CompleteBooking(context.Id)">
+                                        ✅ Selesaikan (Terima COD)
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => CancelBooking(context.Id)">
+                                        ❌ Batalkan
+                                    </MudButton>
+                                }
+                                <MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small" StartIcon="@Icons.Material.Filled.Navigation" OnClick="() => OpenMapsNavigation(context.MeetLatitude, context.MeetLongitude)">
+                                    🗺️ Rute Maps
+                                </MudButton>
+                            </div>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudTabPanel>
+
+        <!-- TAB 2: STOK BARANG SAAT INI -->
         <MudTabPanel Text="Stok & Harga Jual Saya" Icon="@Icons.Material.Filled.Inventory2">
             <MudTable Items="_stocks" Hover="true" Striped="true" Elevation="0">
                 <HeaderContent>
@@ -98,38 +170,38 @@
                     <MudTh>Aksi Edit Harga</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd>
-                        <img src="@context.ImageUrl" style="width: 44px; height: 44px; object-fit: cover; border-radius: 8px;" alt="@context.ProductName" />
+                    <MudTd DataLabel="Gambar">
+                        <img src="@context.ImageUrl" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px;" alt="@context.ProductName" />
                     </MudTd>
-                    <MudTd DataLabel="Nama">
-                        <MudText Typo="Typo.body2" Class="font-weight-bold">@context.ProductName</MudText>
-                    </MudTd>
+                    <MudTd DataLabel="Nama Barang" Class="font-weight-bold">@context.ProductName</MudTd>
                     <MudTd DataLabel="Kategori">@context.Category</MudTd>
-                    <MudTd DataLabel="Stok">
-                        <MudText Typo="Typo.body2" Class="font-weight-bold" Style="@(context.StockQuantity > 0 ? "color: #4ade80;" : "color: #ef4444;")">
+                    <MudTd DataLabel="Jumlah Stok">
+                        <MudText Typo="Typo.body2" Class="font-weight-bold" Style="@(context.StockQuantity <= 0 ? "color: #ef4444;" : "color: #10b981;")">
                             @context.StockQuantity @context.Unit
                         </MudText>
                     </MudTd>
-                    <MudTd DataLabel="Harga">Rp @context.PricePerUnit.ToString("N0") / @context.Unit</MudTd>
+                    <MudTd DataLabel="Harga Jual">Rp @context.PricePerUnit.ToString("N0")</MudTd>
                     <MudTd DataLabel="Status">
                         @if (context.StockQuantity > 0)
                         {
-                            <MudChip T="string" Color="Color.Success" Size="Size.Small">Tersedia</MudChip>
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small">TERSEDIA</MudChip>
                         }
                         else
                         {
-                            <MudChip T="string" Color="Color.Error" Size="Size.Small">Stok Habis</MudChip>
+                            <MudChip T="string" Color="Color.Error" Size="Size.Small">HABIS</MudChip>
                         }
                     </MudTd>
                     <MudTd DataLabel="Aksi">
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Small" OnClick='() => OpenEditStockDialog(context)' />
+                        <MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small" OnClick="() => OpenEditStockDialog(context)">
+                            Edit Stok/Harga
+                        </MudButton>
                     </MudTd>
                 </RowTemplate>
             </MudTable>
         </MudTabPanel>
 
-        <!-- TAB 2: RIWAYAT MUTASI STOK & INCOME -->
-        <MudTabPanel Text="Riwayat Mutasi & Transaksi Income" Icon="@Icons.Material.Filled.ReceiptLong">
+        <!-- TAB 3: RIWAYAT MUTASI STOK & INCOME -->
+        <MudTabPanel Text="Riwayat Mutasi & Income" Icon="@Icons.Material.Filled.ReceiptLong">
             <MudTable Items="_transactions" Hover="true" Elevation="0">
                 <HeaderContent>
                     <MudTh>Waktu</MudTh>
@@ -149,7 +221,7 @@
                         }
                         else
                         {
-                            <MudChip T="string" Color="Color.Success" Size="Size.Small">📤 Terjual (Keluar + Income)</MudChip>
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small">📤 Terjual COD (+Income)</MudChip>
                         }
                     </MudTd>
                     <MudTd DataLabel="Barang" Class="font-weight-bold">@context.ProductName</MudTd>
@@ -192,7 +264,7 @@
 <!-- DIALOG PENJUALAN LANGSUNG (BARANG KELUAR & INCOME) -->
 <MudDialog @bind-Visible="_showSaleDialog" Options="_dialogOpts">
     <TitleContent>
-        <MudText Typo="Typo.h6" Style="color: #f59e0b;">📤 Catat Penjualan (Stok Keluar & Saldo Direct)</MudText>
+        <MudText Typo="Typo.h6" Style="color: #f59e0b;">📤 Catat Penjualan Langsung (+Saldo)</MudText>
     </TitleContent>
     <DialogContent>
         <MudSelect T="int" Label="Pilih Barang Terjual" @bind-Value="_saleForm.ProductId" Variant="Variant.Outlined" Class="mb-3">
@@ -229,10 +301,11 @@
 @code {
     private int _tukangSayurId => AppState.TukangSayurId ?? 1;
     private bool _isOnline = true;
-    private string _currentLocationName = "Kelapa Gading Permai (Koordinat: -6.155, 106.902)";
+    private string _currentLocationName = "Kelapa Gading Permai";
 
     private List<StockItemClientDto> _stocks = new();
     private List<StockTransactionClientDto> _transactions = new();
+    private List<OrderClientDto> _vendorOrders = new();
     private List<ProductClientDto> _masterProducts = new();
     private IncomeSummaryClientDto? _incomeSummary;
 
@@ -245,6 +318,10 @@
     private SaleForm _saleForm = new();
     private EditStockForm _editStockForm = new();
 
+    private double _tukangLat = -6.1550;
+    private double _tukangLng = 106.9020;
+    private bool _updatingGps = false;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
@@ -255,12 +332,9 @@
         _stocks = await Api.GetMyStocksAsync(_tukangSayurId);
         _incomeSummary = await Api.GetIncomeSummaryAsync(_tukangSayurId);
         _transactions = _incomeSummary?.RecentTransactions ?? new List<StockTransactionClientDto>();
+        _vendorOrders = await Api.GetVendorOrdersAsync(_tukangSayurId);
         _masterProducts = await Api.GetProductsAsync();
     }
-
-    private double _tukangLat = -6.1550;
-    private double _tukangLng = 106.9020;
-    private bool _updatingGps = false;
 
     private async Task UpdateGPSLocation()
     {
@@ -312,6 +386,39 @@
         _isOnline = val;
         await Api.ToggleOnlineAsync(_tukangSayurId, _isOnline, _tukangLat, _tukangLng, _currentLocationName);
         Snackbar.Add($"Status jualan diubah menjadi: {(_isOnline ? "ONLINE" : "OFFLINE")}", _isOnline ? Severity.Success : Severity.Normal);
+    }
+
+    private async Task CompleteBooking(int orderId)
+    {
+        var ok = await Api.CompleteVendorOrderAsync(_tukangSayurId, orderId);
+        if (ok)
+        {
+            Snackbar.Add("✅ Transaksi COD Selesai! Stok barang terpotong & Saldo dompet bertambah.", Severity.Success);
+            await LoadData();
+        }
+        else
+        {
+            Snackbar.Add("Gagal memproses transaksi COD.", Severity.Error);
+        }
+    }
+
+    private async Task CancelBooking(int orderId)
+    {
+        var ok = await Api.CancelVendorOrderAsync(_tukangSayurId, orderId);
+        if (ok)
+        {
+            Snackbar.Add("Pesanan booking berhasil dibatalkan.", Severity.Normal);
+            await LoadData();
+        }
+        else
+        {
+            Snackbar.Add("Gagal membatalkan booking.", Severity.Error);
+        }
+    }
+
+    private async Task OpenMapsNavigation(double destLat, double destLng)
+    {
+        await MapLauncher.OpenNavigationAsync(JSRuntime, _tukangLat, _tukangLng, destLat, destLng);
     }
 
     private void OpenRestockDialog()
@@ -381,23 +488,23 @@
         await LoadData();
     }
 
-    public class RestockForm
+    private class RestockForm
     {
         public int ProductId { get; set; }
-        public double Quantity { get; set; } = 10;
-        public decimal UnitPrice { get; set; } = 3000m;
+        public double Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
         public string Notes { get; set; } = string.Empty;
     }
 
-    public class SaleForm
+    private class SaleForm
     {
         public int ProductId { get; set; }
-        public double Quantity { get; set; } = 1;
-        public decimal UnitPrice { get; set; } = 4000m;
+        public double Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
         public string Notes { get; set; } = string.Empty;
     }
 
-    public class EditStockForm
+    private class EditStockForm
     {
         public int ProductId { get; set; }
         public double Quantity { get; set; }

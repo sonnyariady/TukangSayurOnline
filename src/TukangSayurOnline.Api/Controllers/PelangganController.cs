@@ -17,6 +17,27 @@ public class PelangganController : ControllerBase
         _pelangganService = pelangganService;
     }
 
+    [HttpGet("nearby-vendors")]
+    public async Task<IActionResult> GetNearbyVendors(
+        [FromQuery] double userLat = 0,
+        [FromQuery] double userLng = 0,
+        [FromQuery] double maxDistanceKm = 25)
+    {
+        var result = await _pelangganService.GetNearbyVendorsAsync(userLat, userLng, maxDistanceKm);
+        return Ok(result);
+    }
+
+    [HttpGet("vendors/{vendorId}/catalog")]
+    public async Task<IActionResult> GetVendorCatalog(
+        int vendorId,
+        [FromQuery] double userLat = 0,
+        [FromQuery] double userLng = 0)
+    {
+        var result = await _pelangganService.GetVendorCatalogAsync(vendorId, userLat, userLng);
+        if (result == null) return NotFound("Lapak Tukang Sayur tidak ditemukan.");
+        return Ok(result);
+    }
+
     [HttpGet("search-nearby")]
     public async Task<IActionResult> SearchNearby(
         [FromQuery] double userLat = 0,

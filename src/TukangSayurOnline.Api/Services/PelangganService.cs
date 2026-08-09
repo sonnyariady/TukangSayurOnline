@@ -11,6 +11,8 @@ namespace TukangSayurOnline.Api.Services;
 
 public interface IPelangganService
 {
+    Task<List<NearbyVendorSummaryDto>> GetNearbyVendorsAsync(double userLat, double userLng, double maxDistanceKm = 25);
+    Task<VendorCatalogDto?> GetVendorCatalogAsync(int vendorId, double userLat, double userLng);
     Task<List<NearbyVendorProductDto>> SearchNearbyProductsAsync(double userLat, double userLng, string? query, string? category, double maxDistanceKm = 25);
     Task<OrderDto> CreateOrderAsync(int customerId, CreateOrderRequest request);
     Task<List<OrderDto>> GetMyOrdersAsync(int customerId);
@@ -26,9 +28,88 @@ public class PelangganService : IPelangganService
         _context = context;
     }
 
+    public async Task<List<NearbyVendorSummaryDto>> GetNearbyVendorsAsync(double userLat, double userLng, double maxDistanceKm = 25)
+    {
+        if (userLat == 0 && userLng == 0)
+        {
+            userLat = -6.2088;
+            userLng = 106.8456;
+        }
+
+        var vendors = await _context.TukangSayurProfiles
+            .Include(v => v.User)
+            .Include(v => v.Stocks)
+            .Where(v => v.IsOnline)
+            .ToListAsync();
+
+        var result = new List<NearbyVendorSummaryDto>();
+
+        foreach (var v in vendors)
+        {
+            var dist = CalculateDistanceKm(userLat, userLng, v.Latitude, v.Longitude);
+            if (dist <= maxDistanceKm)
+            {
+                result.Add(new NearbyVendorSummaryDto(
+                    v.Id,
+                    v.ShopName,
+                    v.User?.FullName ?? "Tukang Sayur",
+                    v.User?.Phone ?? "",
+                    v.Latitude,
+                    v.Longitude,
+                    Math.Round(dist, 2),
+                    v.IsOnline,
+                    string.IsNullOrWhiteSpace(v.CurrentLocationName) ? "Lokasi Lapak" : v.CurrentLocationName,
+                    v.Stocks.Count(s => s.StockQuantity > 0)
+                ));
+            }
+        }
+
+        return result.OrderBy(r => r.DistanceKm).ToList();
+    }
+
+    public async Task<VendorCatalogDto?> GetVendorCatalogAsync(int vendorId, double userLat, double userLng)
+    {
+        var vendor = await _context.TukangSayurProfiles
+            .Include(v => v.User)
+            .Include(v => v.Stocks).ThenInclude(s => s.Product)
+            .FirstOrDefaultAsync(v => v.Id == vendorId);
+
+        if (vendor == null) return null;
+
+        var dist = (userLat != 0 && userLng != 0)
+            ? CalculateDistanceKm(userLat, userLng, vendor.Latitude, vendor.Longitude)
+            : 0;
+
+        var products = vendor.Stocks
+            .Where(s => s.StockQuantity > 0)
+            .Select(s => new StockItemDto(
+                s.Id,
+                s.ProductId,
+                s.Product.Name,
+                s.Product.Category,
+                s.Product.Unit,
+                s.Product.ImageUrl,
+                s.StockQuantity,
+                s.PricePerUnit,
+                s.UpdatedAt
+            )).ToList();
+
+        return new VendorCatalogDto(
+            vendor.Id,
+            vendor.ShopName,
+            vendor.User?.FullName ?? "Tukang Sayur",
+            vendor.User?.Phone ?? "",
+            vendor.Latitude,
+            vendor.Longitude,
+            Math.Round(dist, 2),
+            vendor.IsOnline,
+            string.IsNullOrWhiteSpace(vendor.CurrentLocationName) ? "Lokasi Lapak" : vendor.CurrentLocationName,
+            products
+        );
+    }
+
     public async Task<List<NearbyVendorProductDto>> SearchNearbyProductsAsync(double userLat, double userLng, string? query, string? category, double maxDistanceKm = 25)
     {
-        // Default to Jakarta central coordinates if 0
         if (userLat == 0 && userLng == 0)
         {
             userLat = -6.2088;
@@ -105,10 +186,6 @@ public class PelangganService : IPelangganService
                 throw new InvalidOperationException($"Stok '{prodName}' pada {vendor.ShopName} tidak mencukupi.");
             }
 
-            // Deduct stock
-            stock.StockQuantity -= itemReq.Quantity;
-            stock.UpdatedAt = DateTime.UtcNow;
-
             var subtotal = (decimal)itemReq.Quantity * itemReq.UnitPrice;
             totalAmount += subtotal;
 
@@ -119,30 +196,14 @@ public class PelangganService : IPelangganService
                 UnitPrice = itemReq.UnitPrice,
                 SubTotal = subtotal
             });
-
-            // Add SaleOut Transaction for Tukang Sayur
-            _context.StockTransactions.Add(new StockTransaction
-            {
-                TukangSayurId = request.TukangSayurId,
-                ProductId = itemReq.ProductId,
-                Type = StockTransactionType.SaleOut,
-                Quantity = itemReq.Quantity,
-                UnitPrice = itemReq.UnitPrice,
-                TotalAmount = subtotal,
-                Notes = $"Penjualan kepada {customer.FullName} (Order #Direct)",
-                TransactionDate = DateTime.UtcNow
-            });
         }
-
-        // Add income balance to vendor
-        vendor.Balance += totalAmount;
 
         var order = new Order
         {
             CustomerId = customerId,
             TukangSayurId = request.TukangSayurId,
             TotalAmount = totalAmount,
-            Status = OrderStatus.Completed,
+            Status = OrderStatus.Pending, // Pre-order / Booking COD
             MeetLatitude = request.MeetLatitude != 0 ? request.MeetLatitude : vendor.Latitude,
             MeetLongitude = request.MeetLongitude != 0 ? request.MeetLongitude : vendor.Longitude,
             MeetAddress = string.IsNullOrWhiteSpace(request.MeetAddress) ? vendor.CurrentLocationName : request.MeetAddress,

@@ -18,6 +18,9 @@ public interface ITukangSayurService
     Task<StockTransactionDto> RecordSaleOutAsync(int tukangSayurId, RecordSaleRequest request);
     Task<IncomeSummaryDto> GetIncomeSummaryAsync(int tukangSayurId);
     Task<bool> ToggleOnlineAsync(int tukangSayurId, bool isOnline, double latitude, double longitude, string locationName);
+    Task<List<OrderDto>> GetVendorOrdersAsync(int tukangSayurId);
+    Task<bool> CompleteOrderAsync(int tukangSayurId, int orderId);
+    Task<bool> CancelOrderAsync(int tukangSayurId, int orderId);
 }
 
 public class TukangSayurService : ITukangSayurService
@@ -275,6 +278,93 @@ public class TukangSayurService : ITukangSayurService
             vendor.CurrentLocationName = locationName;
         }
 
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<List<OrderDto>> GetVendorOrdersAsync(int tukangSayurId)
+    {
+        var orders = await _context.Orders
+            .Include(o => o.Customer)
+            .Include(o => o.TukangSayur)
+            .Include(o => o.Items).ThenInclude(i => i.Product)
+            .Where(o => o.TukangSayurId == tukangSayurId)
+            .OrderByDescending(o => o.OrderDate)
+            .ToListAsync();
+
+        return orders.Select(o => new OrderDto(
+            o.Id,
+            o.CustomerId,
+            o.Customer?.FullName ?? "Pelanggan",
+            o.TukangSayurId,
+            o.TukangSayur?.ShopName ?? "Lapak",
+            o.TotalAmount,
+            o.Status.ToString(),
+            o.MeetLatitude,
+            o.MeetLongitude,
+            o.MeetAddress,
+            o.OrderDate,
+            o.Items.Select(i => new OrderItemDto(
+                i.ProductId,
+                i.Product?.Name ?? "",
+                i.Product?.Unit ?? "",
+                i.Quantity,
+                i.UnitPrice,
+                i.SubTotal
+            )).ToList()
+        )).ToList();
+    }
+
+    public async Task<bool> CompleteOrderAsync(int tukangSayurId, int orderId)
+    {
+        var order = await _context.Orders
+            .Include(o => o.Customer)
+            .Include(o => o.Items).ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(o => o.Id == orderId && o.TukangSayurId == tukangSayurId);
+
+        if (order == null || order.Status == OrderStatus.Completed || order.Status == OrderStatus.Cancelled) return false;
+
+        var vendor = await _context.TukangSayurProfiles.FindAsync(tukangSayurId);
+        if (vendor == null) return false;
+
+        // Process COD payment: deduct stock, add income, record SaleOut transaction
+        foreach (var item in order.Items)
+        {
+            var stock = await _context.TukangSayurStocks
+                .FirstOrDefaultAsync(s => s.TukangSayurId == tukangSayurId && s.ProductId == item.ProductId);
+
+            if (stock != null)
+            {
+                stock.StockQuantity = Math.Max(0, stock.StockQuantity - item.Quantity);
+                stock.UpdatedAt = DateTime.UtcNow;
+            }
+
+            _context.StockTransactions.Add(new StockTransaction
+            {
+                TukangSayurId = tukangSayurId,
+                ProductId = item.ProductId,
+                Type = StockTransactionType.SaleOut,
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice,
+                TotalAmount = item.SubTotal,
+                Notes = $"Penjualan COD kepada {order.Customer?.FullName ?? "Pelanggan"} (Order #{order.Id})",
+                TransactionDate = DateTime.UtcNow
+            });
+        }
+
+        vendor.Balance += order.TotalAmount;
+        order.Status = OrderStatus.Completed;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> CancelOrderAsync(int tukangSayurId, int orderId)
+    {
+        var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId && o.TukangSayurId == tukangSayurId);
+        if (order == null || order.Status == OrderStatus.Completed) return false;
+
+        order.Status = OrderStatus.Cancelled;
         await _context.SaveChangesAsync();
         return true;
     }

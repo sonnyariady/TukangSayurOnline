@@ -82,4 +82,27 @@ public class TukangSayurController : ControllerBase
         if (!success) return NotFound("Tukang sayur tidak ditemukan.");
         return Ok(new { Message = "Status online berhasil diperbarui.", IsOnline = request.IsOnline });
     }
+
+    [HttpGet("{tukangSayurId}/orders")]
+    public async Task<IActionResult> GetVendorOrders(int tukangSayurId)
+    {
+        var orders = await _tukangSayurService.GetVendorOrdersAsync(tukangSayurId);
+        return Ok(orders);
+    }
+
+    [HttpPost("{tukangSayurId}/orders/{orderId}/complete")]
+    public async Task<IActionResult> CompleteOrder(int tukangSayurId, int orderId)
+    {
+        var success = await _tukangSayurService.CompleteOrderAsync(tukangSayurId, orderId);
+        if (!success) return BadRequest(new { Message = "Gagal menyelesaikan pesanan COD." });
+        return Ok(new { Message = "Pesanan COD berhasil diselesaikan!" });
+    }
+
+    [HttpPost("{tukangSayurId}/orders/{orderId}/cancel")]
+    public async Task<IActionResult> CancelOrder(int tukangSayurId, int orderId)
+    {
+        var success = await _tukangSayurService.CancelOrderAsync(tukangSayurId, orderId);
+        if (!success) return BadRequest(new { Message = "Gagal membatalkan pesanan." });
+        return Ok(new { Message = "Pesanan berhasil dibatalkan." });
+    }
 }

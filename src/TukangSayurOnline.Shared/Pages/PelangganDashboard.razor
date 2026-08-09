@@ -8,7 +8,7 @@
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-8">
     <div class="mb-6 d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between gap-3">
         <div>
-            <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #4ade80;">🛒 Cari Sayur & Tukang Sayur Terdekat</MudText>
+            <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #4ade80;">🛒 Cari Sayur & Lapak Terdekat</MudText>
             <MudText Typo="Typo.body2" Style="color: #94a3b8;">
                 Lokasi Anda Saat Ini: 📍 <strong>@_userLocationName</strong> (Lat: @_userLat.ToString("F4"), Lng: @_userLng.ToString("F4"))
             </MudText>
@@ -26,79 +26,50 @@
         </MudButton>
     </div>
 
-    <!-- SEARCH & FILTER BAR -->
-    <MudPaper Elevation="4" Class="pa-4 mb-6" Style="background: #1e293b; border-radius: 14px;">
-        <div class="d-flex flex-column flex-md-row align-center gap-4">
-            <MudTextField T="string" Placeholder="Cari nama barang (misal: Bayam, Wortel, Tomat, Cabai)..." @bind-Value="_searchQuery" Immediate="true" OnKeyUp="PerformSearch" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Style="flex: 1;" />
-
-            <MudSelect T="string" Label="Kategori" Value="_selectedCategory" ValueChanged="OnCategoryChanged" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 200px;">
-                <MudSelectItem Value='""'>Semua Kategori</MudSelectItem>
-                <MudSelectItem Value='"Sayuran Hijau"'>Sayuran Hijau</MudSelectItem>
-                <MudSelectItem Value='"Sayuran Umbi"'>Sayuran Umbi</MudSelectItem>
-                <MudSelectItem Value='"Sayuran Buah"'>Sayuran Buah</MudSelectItem>
-                <MudSelectItem Value='"Bumbu & Rempah"'>Bumbu & Rempah</MudSelectItem>
-                <MudSelectItem Value='"Lauk Pauk"'>Lauk Pauk</MudSelectItem>
-            </MudSelect>
-
-            <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.NearMe" OnClick="PerformSearch" Style="height: 40px;">
-                Cari Terdekat
-            </MudButton>
-        </div>
-    </MudPaper>
-
     <MudTabs Elevation="4" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" Style="background: #1e293b; border-radius: 12px;">
-        <!-- TAB 1: HASIL PENCARIAN TUKANG SAYUR TERDEKAT -->
-        <MudTabPanel Text="Tukang Sayur Terdekat (Ready Stock)" Icon="@Icons.Material.Filled.LocationOn">
-            @if (_loading)
+        <!-- TAB 1: DAFTAR LAPAK TUKANG SAYUR TERDEKAT -->
+        <MudTabPanel Text="Lapak Tukang Sayur Terdekat" Icon="@Icons.Material.Filled.Storefront">
+            @if (_loadingVendors)
             {
                 <div class="d-flex justify-center pa-8">
                     <MudProgressCircular Color="Color.Success" Indeterminate="true" />
                 </div>
             }
-            else if (_searchResults.Count == 0)
+            else if (_nearbyVendors.Count == 0)
             {
                 <MudAlert Severity="Severity.Info" Class="my-4">
-                    Tidak ditemukan Tukang Sayur terdekat yang memiliki stok untuk kata kunci atau kategori tersebut. Coba kata kunci lain!
+                    Belum ditemukan Lapak Tukang Sayur di dekat lokasi Anda. Coba perbarui titik GPS HP Anda.
                 </MudAlert>
             }
             else
             {
                 <MudGrid Class="mt-2">
-                    @foreach (var item in _searchResults)
+                    @foreach (var vendor in _nearbyVendors)
                     {
                         <MudItem xs="12" sm="6" md="4" lg="3">
                             <MudCard Elevation="4" Class="h-100 d-flex flex-column justify-space-between" Style="background: #0f172a; border: 1px solid #334155; border-radius: 14px; overflow: hidden;">
-                                <div>
-                                    <div style="position: relative;">
-                                        <img src="@item.ImageUrl" style="width: 100%; height: 160px; object-fit: cover;" alt="@item.ProductName" />
-                                        <MudChip T="string" Color="Color.Success" Size="Size.Small" Style="position: absolute; top: 8px; right: 8px;">
-                                            📍 @item.DistanceKm km
+                                <MudCardContent Class="pa-4">
+                                    <div class="d-flex align-center justify-space-between mb-2">
+                                        <MudChip T="string" Color="Color.Success" Size="Size.Small">
+                                            📍 @vendor.DistanceKm km
+                                        </MudChip>
+                                        <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined">
+                                            @vendor.TotalProductsCount Barang Ready
                                         </MudChip>
                                     </div>
-                                    <MudCardContent Class="pa-4">
-                                        <MudText Typo="Typo.h6" Class="font-weight-bold" Style="color: #f8fafc;">@item.ProductName</MudText>
-                                        <MudText Typo="Typo.body2" Style="color: #4ade80;" Class="font-weight-bold">
-                                            Rp @item.PricePerUnit.ToString("N0") / @item.Unit
-                                        </MudText>
 
-                                        <MudDivider Class="my-3" Style="border-color: #334155;" />
+                                    <MudText Typo="Typo.h6" Class="font-weight-bold mb-1" Style="color: #f59e0b;">🚴 @vendor.ShopName</MudText>
+                                    <MudText Typo="Typo.body2" Style="color: #cbd5e1;" Class="mb-1">Pemilik: <strong>@vendor.OwnerName</strong></MudText>
+                                    <MudText Typo="Typo.caption" Style="color: #94a3b8;" Class="d-block mb-1">📞 No. HP: @vendor.Phone</MudText>
+                                    <MudText Typo="Typo.caption" Style="color: #64748b;" Class="d-block">📍 Posisi Lapak: @vendor.LocationName</MudText>
+                                </MudCardContent>
 
-                                        <div class="d-flex align-center gap-2 mb-1">
-                                            <MudIcon Icon="@Icons.Material.Filled.Storefront" Size="Size.Small" Color="Color.Warning" />
-                                            <MudText Typo="Typo.body2" Class="font-weight-bold" Style="color: #f59e0b;">@item.ShopName</MudText>
-                                        </div>
-                                        <MudText Typo="Typo.caption" Style="color: #94a3b8;" Class="d-block mb-1">
-                                            Penjual: @item.VendorName (📞 @item.VendorPhone)
-                                        </MudText>
-                                        <MudText Typo="Typo.caption" Style="color: #64748b;" Class="d-block">
-                                            Tersedia: <strong>@item.AvailableStock @item.Unit</strong>
-                                        </MudText>
-                                    </MudCardContent>
-                                </div>
-
-                                <MudCardActions Class="pa-4 pt-0">
-                                    <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true" StartIcon="@Icons.Material.Filled.ShoppingBag" OnClick="() => OpenBuyDialog(item)">
-                                        Temui & Beli Langsung
+                                <MudCardActions Class="pa-4 pt-0 d-flex flex-column gap-2">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true" StartIcon="@Icons.Material.Filled.ShoppingBag" OnClick="() => OpenVendorCatalog(vendor.TukangSayurId)">
+                                        🛒 Lihat Katalog & Booking
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Info" FullWidth="true" StartIcon="@Icons.Material.Filled.Navigation" OnClick="() => OpenMapsNavigation(vendor.Latitude, vendor.Longitude)">
+                                        🗺️ Rute Google Maps
                                     </MudButton>
                                 </MudCardActions>
                             </MudCard>
@@ -108,20 +79,88 @@
             }
         </MudTabPanel>
 
-        <!-- TAB 2: HISTORI PESANAN SAYA -->
-        <MudTabPanel Text="Riwayat Transaksi Saya" Icon="@Icons.Material.Filled.History">
+        <!-- TAB 2: PENCARIAN SEMUA PRODUK -->
+        <MudTabPanel Text="Cari Barang (Semua Produk)" Icon="@Icons.Material.Filled.Search">
+            <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: #0f172a; border-radius: 12px;">
+                <div class="d-flex flex-column flex-md-row align-center gap-4">
+                    <MudTextField T="string" Placeholder="Cari nama barang (misal: Bayam, Wortel, Tomat)..." @bind-Value="_searchQuery" Immediate="true" OnKeyUp="PerformSearch" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Style="flex: 1;" />
+                    <MudSelect T="string" Label="Kategori" Value="_selectedCategory" ValueChanged="OnCategoryChanged" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 200px;">
+                        <MudSelectItem Value='""'>Semua Kategori</MudSelectItem>
+                        <MudSelectItem Value='"Sayuran Hijau"'>Sayuran Hijau</MudSelectItem>
+                        <MudSelectItem Value='"Sayuran Umbi"'>Sayuran Umbi</MudSelectItem>
+                        <MudSelectItem Value='"Sayuran Buah"'>Sayuran Buah</MudSelectItem>
+                        <MudSelectItem Value='"Bumbu & Rempah"'>Bumbu & Rempah</MudSelectItem>
+                        <MudSelectItem Value='"Lauk Pauk"'>Lauk Pauk</MudSelectItem>
+                    </MudSelect>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.NearMe" OnClick="PerformSearch">
+                        Cari
+                    </MudButton>
+                </div>
+            </MudPaper>
+
+            @if (_loadingSearch)
+            {
+                <div class="d-flex justify-center pa-8">
+                    <MudProgressCircular Color="Color.Success" Indeterminate="true" />
+                </div>
+            }
+            else if (_searchResults.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="my-4">
+                    Tidak ditemukan barang jualan yang sesuai dengan kriteria pencarian Anda.
+                </MudAlert>
+            }
+            else
+            {
+                <MudGrid>
+                    @foreach (var item in _searchResults)
+                    {
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudCard Elevation="4" Class="h-100 d-flex flex-column justify-space-between" Style="background: #0f172a; border: 1px solid #334155; border-radius: 14px; overflow: hidden;">
+                                <div>
+                                    <div style="position: relative;">
+                                        <img src="@item.ImageUrl" style="width: 100%; height: 150px; object-fit: cover;" alt="@item.ProductName" />
+                                        <MudChip T="string" Color="Color.Success" Size="Size.Small" Style="position: absolute; top: 8px; right: 8px;">
+                                            📍 @item.DistanceKm km
+                                        </MudChip>
+                                    </div>
+                                    <MudCardContent Class="pa-4">
+                                        <MudText Typo="Typo.h6" Class="font-weight-bold" Style="color: #f8fafc;">@item.ProductName</MudText>
+                                        <MudText Typo="Typo.body2" Style="color: #4ade80;" Class="font-weight-bold">
+                                            Rp @item.PricePerUnit.ToString("N0") / @item.Unit
+                                        </MudText>
+                                        <MudDivider Class="my-2" Style="border-color: #334155;" />
+                                        <MudText Typo="Typo.body2" Class="font-weight-bold" Style="color: #f59e0b;">🚴 @item.ShopName</MudText>
+                                        <MudText Typo="Typo.caption" Style="color: #94a3b8;" Class="d-block">Stok: @item.AvailableStock @item.Unit</MudText>
+                                    </MudCardContent>
+                                </div>
+                                <MudCardActions Class="pa-4 pt-0">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true" StartIcon="@Icons.Material.Filled.BookmarkAdd" OnClick="() => OpenBuyDialogFromProduct(item)">
+                                        Booking COD (Bayar di Tempat)
+                                    </MudButton>
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+        </MudTabPanel>
+
+        <!-- TAB 3: STATUS BOOKING SAYA -->
+        <MudTabPanel Text="Status Booking Saya" Icon="@Icons.Material.Filled.Assignment">
             <MudTable Items="_myOrders" Hover="true" Elevation="0">
                 <HeaderContent>
-                    <MudTh>ID Pesanan</MudTh>
+                    <MudTh>ID Booking</MudTh>
                     <MudTh>Waktu</MudTh>
                     <MudTh>Tukang Sayur</MudTh>
-                    <MudTh>Barang Dibeli</MudTh>
-                    <MudTh>Total Bayar</MudTh>
-                    <MudTh>Lokasi Pertemuan</MudTh>
+                    <MudTh>Barang Dipesan</MudTh>
+                    <MudTh>Total Bayar (COD)</MudTh>
+                    <MudTh>Alamat / Pertemuan</MudTh>
                     <MudTh>Status</MudTh>
+                    <MudTh>Aksi Navigasi</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="ID">#ORD-@context.Id</MudTd>
+                    <MudTd DataLabel="ID">#BKG-@context.Id</MudTd>
                     <MudTd DataLabel="Waktu">@context.OrderDate.ToLocalTime().ToString("dd MMM yyyy HH:mm")</MudTd>
                     <MudTd DataLabel="Tukang Sayur" Class="font-weight-bold" Style="color: #f59e0b;">@context.ShopName</MudTd>
                     <MudTd DataLabel="Barang">
@@ -137,7 +176,23 @@
                     </MudTd>
                     <MudTd DataLabel="Lokasi">📍 @context.MeetAddress</MudTd>
                     <MudTd DataLabel="Status">
-                        <MudChip T="string" Color="Color.Success" Size="Size.Small">SELESAI</MudChip>
+                        @if (context.Status == "Pending")
+                        {
+                            <MudChip T="string" Color="Color.Warning" Size="Size.Small" Variant="Variant.Filled">⏳ PENDING (BOOKING COD)</MudChip>
+                        }
+                        else if (context.Status == "Completed")
+                        {
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">✅ SELESAI (LUNAS COD)</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">❌ DIBATALKAN</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Navigasi">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small" StartIcon="@Icons.Material.Filled.Navigation" OnClick="() => OpenMapsNavigation(context.MeetLatitude, context.MeetLongitude)">
+                            🗺️ Rute
+                        </MudButton>
                     </MudTd>
                 </RowTemplate>
             </MudTable>
@@ -145,63 +200,109 @@
     </MudTabs>
 </MudContainer>
 
-<!-- DIALOG TRANSAKSI BEMBELIAN & TEMUI TUKANG SAYUR -->
-<MudDialog @bind-Visible="_showBuyDialog" Options="_dialogOpts">
+<!-- DIALOG KATALOG LAPAK TUKANG SAYUR -->
+<MudDialog @bind-Visible="_showCatalogDialog" Options="_catalogDialogOpts">
     <TitleContent>
-        <MudText Typo="Typo.h6" Style="color: #4ade80;">🥬 Transaksi Pembelian Sayur</MudText>
+        @if (_selectedCatalog != null)
+        {
+            <div class="d-flex align-center gap-2">
+                <MudIcon Icon="@Icons.Material.Filled.Storefront" Color="Color.Warning" />
+                <MudText Typo="Typo.h6" Style="color: #f59e0b;">@_selectedCatalog.ShopName</MudText>
+            </div>
+        }
     </TitleContent>
     <DialogContent>
-        @if (_selectedItem != null)
+        @if (_selectedCatalog != null)
         {
-            <div class="d-flex align-center gap-3 mb-4 pa-3" style="background: #0f172a; border-radius: 10px;">
-                <img src="@_selectedItem.ImageUrl" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" alt="@_selectedItem.ProductName" />
-                <div>
-                    <MudText Typo="Typo.subtitle1" Class="font-weight-bold">@_selectedItem.ProductName</MudText>
-                    <MudText Typo="Typo.body2" Style="color: #f59e0b;">Toko: @_selectedItem.ShopName (@_selectedItem.VendorName)</MudText>
-                    <MudText Typo="Typo.caption" Style="color: #94a3b8;">Jarak: @_selectedItem.DistanceKm km | Stok: @_selectedItem.AvailableStock @_selectedItem.Unit</MudText>
-                </div>
+            <div class="pa-3 mb-4" style="background: #0f172a; border-radius: 10px; border: 1px solid #334155;">
+                <MudText Typo="Typo.body2" Style="color: #f8fafc;">Pemilik: <strong>@_selectedCatalog.OwnerName</strong> (📞 @_selectedCatalog.Phone)</MudText>
+                <MudText Typo="Typo.caption" Style="color: #94a3b8;" Class="d-block">📍 Lokasi: @_selectedCatalog.LocationName | Jarak: @_selectedCatalog.DistanceKm km</MudText>
             </div>
 
-            <MudNumericField T="double" Label="Jumlah yang Ingin Dibeli" @bind-Value="_buyQuantity" Min="0.5" Max="@_selectedItem.AvailableStock" Variant="Variant.Outlined" Class="mb-3" />
+            <MudText Typo="Typo.subtitle1" Class="font-weight-bold mb-2" Style="color: #4ade80;">Pilih Barang Jualan untuk Di-Booking:</MudText>
+            
+            <div style="max-height: 350px; overflow-y: auto;">
+                @foreach (var prod in _selectedCatalog.Products)
+                {
+                    <div class="d-flex align-center justify-space-between pa-3 mb-2" style="background: #1e293b; border-radius: 10px;">
+                        <div class="d-flex align-center gap-3">
+                            <img src="@prod.ImageUrl" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;" alt="@prod.ProductName" />
+                            <div>
+                                <MudText Typo="Typo.body1" Class="font-weight-bold">@prod.ProductName</MudText>
+                                <MudText Typo="Typo.caption" Style="color: #4ade80;" Class="font-weight-bold">Rp @prod.PricePerUnit.ToString("N0") / @prod.Unit</MudText>
+                                <MudText Typo="Typo.caption" Style="color: #94a3b8;" Class="d-block">Stok: @prod.StockQuantity @prod.Unit</MudText>
+                            </div>
+                        </div>
 
-            <MudTextField T="string" Label="Lokasi Titik Pertemuan / Alamat" @bind-Value="_meetAddress" Variant="Variant.Outlined" Class="mb-3" HelperText="Lokasi di mana Anda akan bertemu tukang sayur" />
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" OnClick="() => SelectProductForBooking(prod)">
+                            Booking
+                        </MudButton>
+                    </div>
+                }
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => _showCatalogDialog = false">Tutup</MudButton>
+    </DialogActions>
+</MudDialog>
 
-            <div class="pa-3 mt-3" style="background: #1e293b; border-radius: 8px; border: 1px border-color: #334155;">
-                <div class="d-flex justify-space-between mb-1">
-                    <span>Harga Satuan:</span>
-                    <span>Rp @_selectedItem.PricePerUnit.ToString("N0")</span>
-                </div>
-                <div class="d-flex justify-space-between font-weight-bold" style="font-size: 1.1rem; color: #4ade80;">
-                    <span>Total Pembayaran:</span>
-                    <span>Rp @(((decimal)_buyQuantity * _selectedItem.PricePerUnit).ToString("N0"))</span>
+<!-- DIALOG FORM BOOKING COD -->
+<MudDialog @bind-Visible="_showBookingFormDialog" Options="_dialogOpts">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color: #4ade80;">📝 Form Booking COD (Bayar Saat Ketemu)</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_bookingProduct != null)
+        {
+            <div class="pa-3 mb-3" style="background: #0f172a; border-radius: 8px;">
+                <MudText Typo="Typo.subtitle1" Class="font-weight-bold">@_bookingProduct.ProductName</MudText>
+                <MudText Typo="Typo.body2" Style="color: #4ade80;">Harga: Rp @_bookingProduct.PricePerUnit.ToString("N0") / @_bookingProduct.Unit</MudText>
+            </div>
+
+            <MudNumericField T="double" Label="Jumlah Unit Dipesan" @bind-Value="_bookingQty" Min="0.5" Max="@_bookingProduct.StockQuantity" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField T="string" Label="Alamat / Titik Pertemuan COD" @bind-Value="_meetAddress" Variant="Variant.Outlined" Class="mb-3" HelperText="Lokasi bertemu dengan Tukang Sayur" />
+
+            <div class="pa-3 mt-2" style="background: #1e293b; border-radius: 8px;">
+                <div class="d-flex justify-space-between font-weight-bold" style="color: #4ade80;">
+                    <span>Total Bayar COD:</span>
+                    <span>Rp @(((decimal)_bookingQty * _bookingProduct.PricePerUnit).ToString("N0"))</span>
                 </div>
             </div>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="() => _showBuyDialog = false">Batal</MudButton>
-        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="ConfirmPurchase">Konfirmasi Transaksi</MudButton>
+        <MudButton OnClick="() => _showBookingFormDialog = false">Batal</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="ConfirmBooking">Konfirmasi Booking COD</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     private int _customerId => AppState.UserId != 0 ? AppState.UserId : 3;
-    private bool _loading = false;
+    private bool _loadingVendors = false;
+    private bool _loadingSearch = false;
     private string _searchQuery = string.Empty;
     private string _selectedCategory = string.Empty;
 
+    private List<NearbyVendorSummaryClientDto> _nearbyVendors = new();
     private List<NearbyVendorProductClientDto> _searchResults = new();
     private List<OrderClientDto> _myOrders = new();
 
-    private bool _showBuyDialog = false;
-    private NearbyVendorProductClientDto? _selectedItem;
-    private double _buyQuantity = 1;
-    private string _meetAddress = "Perumahan Sunter Garden Blok C No. 12";
+    private bool _showCatalogDialog = false;
+    private VendorCatalogClientDto? _selectedCatalog;
+
+    private bool _showBookingFormDialog = false;
+    private int _bookingVendorId = 0;
+    private StockItemClientDto? _bookingProduct;
+    private double _bookingQty = 1;
+    private string _meetAddress = "Jaticempaka, Pondok Gede";
+
     private DialogOptions _dialogOpts = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+    private DialogOptions _catalogDialogOpts = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
 
     private double _userLat = -6.1480;
     private double _userLng = 106.8720;
-    private string _userLocationName = "Sunter Garden, Jakarta Utara";
+    private string _userLocationName = "Detecting...";
     private bool _detectingGps = false;
 
     protected override async Task OnInitializedAsync()
@@ -221,8 +322,8 @@
             {
                 _userLat = nativePos.Value.Latitude;
                 _userLng = nativePos.Value.Longitude;
-                _userLocationName = "Lokasi Perangkat (GPS Hardware HP)";
-                Snackbar.Add($"GPS HP Ditemukan: {_userLat:F4}, {_userLng:F4}", Severity.Success);
+                _userLocationName = "GPS Hardware HP";
+                Snackbar.Add($"GPS Ditemukan: {_userLat:F4}, {_userLng:F4}", Severity.Success);
             }
             else
             {
@@ -231,7 +332,7 @@
                 {
                     _userLat = pos.Latitude;
                     _userLng = pos.Longitude;
-                    _userLocationName = "Lokasi Perangkat (GPS Web)";
+                    _userLocationName = "GPS Web";
                     Snackbar.Add($"GPS Ditemukan: {_userLat:F4}, {_userLng:F4}", Severity.Success);
                 }
             }
@@ -243,11 +344,12 @@
         }
         catch
         {
-            // Fallback default Sunter if GPS denied
+            // Fallback default
         }
         finally
         {
             _detectingGps = false;
+            await LoadNearbyVendors();
             await PerformSearch();
         }
     }
@@ -258,11 +360,18 @@
         public double Longitude { get; set; }
     }
 
+    private async Task LoadNearbyVendors()
+    {
+        _loadingVendors = true;
+        _nearbyVendors = await Api.GetNearbyVendorsAsync(_userLat, _userLng);
+        _loadingVendors = false;
+    }
+
     private async Task PerformSearch()
     {
-        _loading = true;
+        _loadingSearch = true;
         _searchResults = await Api.SearchNearbyProductsAsync(_userLat, _userLng, _searchQuery, _selectedCategory);
-        _loading = false;
+        _loadingSearch = false;
     }
 
     private async Task OnCategoryChanged(string category)
@@ -276,42 +385,71 @@
         _myOrders = await Api.GetMyOrdersAsync(_customerId);
     }
 
-    private void OpenBuyDialog(NearbyVendorProductClientDto item)
+    private async Task OpenVendorCatalog(int vendorId)
     {
-        _selectedItem = item;
-        _buyQuantity = 1;
-        _showBuyDialog = true;
+        _selectedCatalog = await Api.GetVendorCatalogAsync(vendorId, _userLat, _userLng);
+        if (_selectedCatalog != null)
+        {
+            _showCatalogDialog = true;
+        }
+        else
+        {
+            Snackbar.Add("Gagal memuat katalog toko.", Severity.Error);
+        }
     }
 
-    private async Task ConfirmPurchase()
+    private void SelectProductForBooking(StockItemClientDto item)
     {
-        if (_selectedItem == null) return;
+        if (_selectedCatalog == null) return;
+        _bookingVendorId = _selectedCatalog.TukangSayurId;
+        _bookingProduct = item;
+        _bookingQty = 1;
+        _showBookingFormDialog = true;
+    }
+
+    private void OpenBuyDialogFromProduct(NearbyVendorProductClientDto item)
+    {
+        _bookingVendorId = item.TukangSayurId;
+        _bookingProduct = new StockItemClientDto(0, item.ProductId, item.ProductName, item.Category, item.Unit, item.ImageUrl, item.AvailableStock, item.PricePerUnit, DateTime.Now);
+        _bookingQty = 1;
+        _showBookingFormDialog = true;
+    }
+
+    private async Task ConfirmBooking()
+    {
+        if (_bookingProduct == null || _bookingVendorId == 0) return;
 
         var items = new List<OrderItemClientRequest>
         {
-            new OrderItemClientRequest(_selectedItem.ProductId, _buyQuantity, _selectedItem.PricePerUnit)
+            new OrderItemClientRequest(_bookingProduct.ProductId, _bookingQty, _bookingProduct.PricePerUnit)
         };
 
         var req = new CreateOrderClientRequest(
-            _selectedItem.TukangSayurId,
-            -6.1480,
-            106.8720,
+            _bookingVendorId,
+            _userLat,
+            _userLng,
             _meetAddress,
             items
         );
 
         var order = await Api.CreateOrderAsync(_customerId, req);
-        _showBuyDialog = false;
+        _showBookingFormDialog = false;
+        _showCatalogDialog = false;
 
         if (order != null)
         {
-            Snackbar.Add($"Transaksi Sukses! Stok {_selectedItem.ShopName} terpotong & saldo tukang sayur bertambah.", Severity.Success);
-            await PerformSearch();
+            Snackbar.Add("✅ Booking Berhasil! Pesanan dibuat dengan status 'Booking COD'. Stok & saldo akan diproses saat bertemu Tukang Sayur.", Severity.Success);
+            await LoadNearbyVendors();
             await LoadMyOrders();
         }
         else
         {
-            Snackbar.Add("Gagal melakukan transaksi. Periksa stok tukang sayur.", Severity.Error);
+            Snackbar.Add("Gagal membuat booking.", Severity.Error);
         }
+    }
+
+    private async Task OpenMapsNavigation(double destLat, double destLng)
+    {
+        await MapLauncher.OpenNavigationAsync(JSRuntime, _userLat, _userLng, destLat, destLng);
     }
 }
