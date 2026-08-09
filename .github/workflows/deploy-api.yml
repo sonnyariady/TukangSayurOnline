@@ -27,7 +27,18 @@ jobs:
         run: dotnet restore src/TukangSayurOnline.Api/TukangSayurOnline.Api.csproj
 
       - name: Build & Publish API
-        run: dotnet publish src/TukangSayurOnline.Api/TukangSayurOnline.Api.csproj -c Release -o ./publish-output
+        run: |
+          dotnet publish src/TukangSayurOnline.Api/TukangSayurOnline.Api.csproj -c Release -o ./publish-output
+          echo '<!DOCTYPE html><html><body><h2>Maintenance</h2></body></html>' > ./publish-output/app_offline.htm
+
+      - name: Upload app_offline.htm to stop IIS process
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.MONSTERASP_FTP_SERVER }}
+          username: ${{ secrets.MONSTERASP_FTP_USERNAME }}
+          password: ${{ secrets.MONSTERASP_FTP_PASSWORD }}
+          local-dir: ./publish-output/app_offline.htm
+          server-dir: /wwwroot/app_offline.htm
 
       - name: Sync FTP to MonsterASP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -38,3 +49,9 @@ jobs:
           local-dir: ./publish-output/
           server-dir: /wwwroot/
           dangerous-clean-slate: false
+
+      - name: Remove app_offline.htm to restart IIS
+        if: always()
+        run: |
+          curl -u "${{ secrets.MONSTERASP_FTP_USERNAME }}:${{ secrets.MONSTERASP_FTP_PASSWORD }}" -Q "DELE /wwwroot/app_offline.htm" "ftp://${{ secrets.MONSTERASP_FTP_SERVER }}" || true
+
