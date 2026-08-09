@@ -29,7 +29,8 @@ jobs:
       - name: Build & Publish API
         run: |
           dotnet publish src/TukangSayurOnline.Api/TukangSayurOnline.Api.csproj -c Release -o ./publish-output
-          echo '<!DOCTYPE html><html><body><h2>Maintenance</h2></body></html>' > ./publish-output/app_offline.htm
+          mkdir -p ./offline-dir
+          echo '<!DOCTYPE html><html><body><h2>Maintenance</h2></body></html>' > ./offline-dir/app_offline.htm
 
       - name: Upload app_offline.htm to stop IIS process
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -37,8 +38,8 @@ jobs:
           server: ${{ secrets.MONSTERASP_FTP_SERVER }}
           username: ${{ secrets.MONSTERASP_FTP_USERNAME }}
           password: ${{ secrets.MONSTERASP_FTP_PASSWORD }}
-          local-dir: ./publish-output/app_offline.htm
-          server-dir: /wwwroot/app_offline.htm
+          local-dir: ./offline-dir/
+          server-dir: /wwwroot/
 
       - name: Sync FTP to MonsterASP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
