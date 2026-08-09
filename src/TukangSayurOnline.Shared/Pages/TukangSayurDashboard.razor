@@ -2,6 +2,8 @@
 @inject ApiService Api
 @inject AppStateService AppState
 @inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject IGpsService Gps
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-8">
     <!-- VENDOR HEADER & ONLINE TOGGLE -->
@@ -21,6 +23,17 @@
 
             <div class="d-flex flex-column flex-sm-row align-start align-sm-center gap-3 w-100 w-md-auto mt-2 mt-md-0 flex-wrap">
                 <MudSwitch T="bool" Value="_isOnline" ValueChanged="OnToggleOnline" Color="Color.Success" Label="Status Online" />
+                <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.MyLocation" OnClick="UpdateGPSLocation" Disabled="_updatingGps" Class="w-100 w-sm-auto" Style="white-space: nowrap;">
+                    @if (_updatingGps)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2">GPS...</MudText>
+                    }
+                    else
+                    {
+                        <span>📍 Update Lokasi via GPS</span>
+                    }
+                </MudButton>
                 <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.AddShoppingCart" OnClick="OpenRestockDialog" Class="w-100 w-sm-auto" Style="white-space: nowrap;">
                     Input Stok (Restock)
                 </MudButton>
@@ -245,10 +258,59 @@
         _masterProducts = await Api.GetProductsAsync();
     }
 
+    private double _tukangLat = -6.1550;
+    private double _tukangLng = 106.9020;
+    private bool _updatingGps = false;
+
+    private async Task UpdateGPSLocation()
+    {
+        _updatingGps = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            var nativePos = await Gps.GetCurrentLocationAsync();
+            if (nativePos.HasValue)
+            {
+                _tukangLat = nativePos.Value.Latitude;
+                _tukangLng = nativePos.Value.Longitude;
+                _currentLocationName = $"Lapak (GPS HP: {_tukangLat:F4}, {_tukangLng:F4})";
+                await Api.ToggleOnlineAsync(_tukangSayurId, _isOnline, _tukangLat, _tukangLng, _currentLocationName);
+                Snackbar.Add($"Lokasi Lapak berhasil diperbarui ke GPS HP: {_tukangLat:F4}, {_tukangLng:F4}", Severity.Success);
+            }
+            else
+            {
+                var pos = await JSRuntime.InvokeAsync<GpsPosDto>("getGPSCoordinates");
+                if (pos != null && pos.Latitude != 0)
+                {
+                    _tukangLat = pos.Latitude;
+                    _tukangLng = pos.Longitude;
+                    _currentLocationName = $"Lapak (GPS Web: {_tukangLat:F4}, {_tukangLng:F4})";
+                    await Api.ToggleOnlineAsync(_tukangSayurId, _isOnline, _tukangLat, _tukangLng, _currentLocationName);
+                    Snackbar.Add($"Lokasi Lapak berhasil diperbarui ke GPS: {_tukangLat:F4}, {_tukangLng:F4}", Severity.Success);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Deteksi GPS: {ex.Message}", Severity.Warning);
+        }
+        finally
+        {
+            _updatingGps = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public class GpsPosDto
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
+
     private async Task OnToggleOnline(bool val)
     {
         _isOnline = val;
-        await Api.ToggleOnlineAsync(_tukangSayurId, _isOnline, -6.1550, 106.9020, _currentLocationName);
+        await Api.ToggleOnlineAsync(_tukangSayurId, _isOnline, _tukangLat, _tukangLng, _currentLocationName);
         Snackbar.Add($"Status jualan diubah menjadi: {(_isOnline ? "ONLINE" : "OFFLINE")}", _isOnline ? Severity.Success : Severity.Normal);
     }
 

@@ -39,8 +39,9 @@ public static class MauiProgram
         // Add MudBlazor Services 7.4.0
         builder.Services.AddMudServices();
 
-        // Register App State and API Service from Shared RCL
+        // Register App State, GPS Service, and API Service from Shared RCL
         builder.Services.AddSingleton<AppStateService>();
+        builder.Services.AddSingleton<IGpsService, TukangSayurOnline.Mobile.Services.MauiGpsService>();
 
         // Dynamic Platform-Aware API Base URL Resolution
         var apiBaseUrl = GetPlatformApiBaseUrl(builder.Configuration);
@@ -70,9 +71,9 @@ public static class MauiProgram
         return !string.IsNullOrEmpty(customUrl) ? customUrl : "http://localhost:5000/";
 #endif
 #else
-        // Mode RELEASE: Menggunakan URL API yang sudah di-publish ke MonsterASP (HTTPS)
+        // Mode RELEASE: Menggunakan URL API MonsterASP (HTTP Port 80)
         var prodUrl = config["ProductionApiUrl"];
-        return !string.IsNullOrEmpty(prodUrl) ? prodUrl : "https://tukangsayur-api.tryasp.net/";
+        return !string.IsNullOrEmpty(prodUrl) ? prodUrl : "http://tukangsayur-api.tryasp.net/";
 #endif
     }
 }

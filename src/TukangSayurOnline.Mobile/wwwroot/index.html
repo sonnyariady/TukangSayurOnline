@@ -30,18 +30,31 @@
                     '<pre style="white-space:pre-wrap; word-break:break-all; color:#fca5a5; font-size:13px;">' + msg + '\nURL: ' + url + '\nLine: ' + line + '</pre></div>';
             }
         };
-        window.addEventListener('unhandledrejection', function (e) {
-            var reason = e.reason ? (e.reason.stack || e.reason.message || e.reason) : e;
-            if (typeof reason === 'string' && reason.indexOf('Blazor has already started') !== -1) {
-                return;
-            }
-            var app = document.getElementById('app');
-            if (app) {
-                app.innerHTML = '<div style="padding:24px; color:#f87171; background:#0f172a; min-height:100vh;">' +
-                    '<h3 style="color:#ef4444; margin-top:0;">⚠️ Unhandled Rejection:</h3>' +
-                    '<pre style="white-space:pre-wrap; word-break:break-all; color:#fca5a5; font-size:13px;">' + reason + '</pre></div>';
-            }
-        });
+        window.getGPSCoordinates = function () {
+            return new Promise(function (resolve, reject) {
+                if (!navigator.geolocation) {
+                    reject("Perangkat ini tidak mendukung fitur GPS.");
+                } else {
+                    navigator.geolocation.getCurrentPosition(
+                        function (pos) {
+                            resolve({
+                                latitude: pos.coords.latitude,
+                                longitude: pos.coords.longitude
+                            });
+                        },
+                        function (err) {
+                            var msg = "Gagal mendapatkan GPS: ";
+                            if (err.code === 1) msg += "Izin akses lokasi (GPS) ditolak.";
+                            else if (err.code === 2) msg += "Sinyal lokasi tidak tersedia.";
+                            else if (err.code === 3) msg += "Waktu deteksi GPS habis.";
+                            else msg += err.message;
+                            reject(msg);
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                }
+            });
+        };
     </script>
 
     <div id="blazor-error-ui">

@@ -17,6 +17,33 @@
 
 <body style="font-family: 'Outfit', 'Roboto', sans-serif;">
     <TukangSayurOnline.Shared.Routes @rendermode="InteractiveServer" />
+    <script>
+        window.getGPSCoordinates = function () {
+            return new Promise(function (resolve, reject) {
+                if (!navigator.geolocation) {
+                    reject("Perangkat ini tidak mendukung fitur GPS.");
+                } else {
+                    navigator.geolocation.getCurrentPosition(
+                        function (pos) {
+                            resolve({
+                                latitude: pos.coords.latitude,
+                                longitude: pos.coords.longitude
+                            });
+                        },
+                        function (err) {
+                            var msg = "Gagal mendapatkan GPS: ";
+                            if (err.code === 1) msg += "Izin akses lokasi (GPS) ditolak.";
+                            else if (err.code === 2) msg += "Sinyal lokasi tidak tersedia.";
+                            else if (err.code === 3) msg += "Waktu deteksi GPS habis.";
+                            else msg += err.message;
+                            reject(msg);
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                }
+            });
+        };
+    </script>
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 </body>

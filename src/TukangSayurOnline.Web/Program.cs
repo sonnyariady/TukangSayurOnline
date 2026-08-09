@@ -11,8 +11,9 @@ builder.Services.AddRazorComponents()
 // Add MudBlazor Services 7.4.0
 builder.Services.AddMudServices();
 
-// Register App State and API Service
+// Register App State, GPS Service, and API Service
 builder.Services.AddSingleton<AppStateService>();
+builder.Services.AddScoped<IGpsService, TukangSayurOnline.Web.Services.WebGpsService>();
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000/";
 builder.Services.AddScoped(sp => new HttpClient
 {

@@ -2,13 +2,28 @@
 @inject ApiService Api
 @inject AppStateService AppState
 @inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject IGpsService Gps
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-8">
-    <div class="mb-6">
-        <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #4ade80;">🛒 Cari Sayur & Tukang Sayur Terdekat</MudText>
-        <MudText Typo="Typo.body2" Style="color: #94a3b8;">
-            Lokasi Anda Saat Ini: 📍 <strong>Sunter Garden, Jakarta Utara</strong> (Lat: -6.148, Lng: 106.872)
-        </MudText>
+    <div class="mb-6 d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between gap-3">
+        <div>
+            <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #4ade80;">🛒 Cari Sayur & Tukang Sayur Terdekat</MudText>
+            <MudText Typo="Typo.body2" Style="color: #94a3b8;">
+                Lokasi Anda Saat Ini: 📍 <strong>@_userLocationName</strong> (Lat: @_userLat.ToString("F4"), Lng: @_userLng.ToString("F4"))
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.MyLocation" OnClick="DetectGPSLocation" Disabled="_detectingGps">
+            @if (_detectingGps)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Mencari GPS...</MudText>
+            }
+            else
+            {
+                <span>📍 Deteksi GPS HP</span>
+            }
+        </MudButton>
     </div>
 
     <!-- SEARCH & FILTER BAR -->
@@ -184,16 +199,64 @@
     private string _meetAddress = "Perumahan Sunter Garden Blok C No. 12";
     private DialogOptions _dialogOpts = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
 
+    private double _userLat = -6.1480;
+    private double _userLng = 106.8720;
+    private string _userLocationName = "Sunter Garden, Jakarta Utara";
+    private bool _detectingGps = false;
+
     protected override async Task OnInitializedAsync()
     {
-        await PerformSearch();
+        await DetectGPSLocation();
         await LoadMyOrders();
+    }
+
+    private async Task DetectGPSLocation()
+    {
+        _detectingGps = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            var nativePos = await Gps.GetCurrentLocationAsync();
+            if (nativePos.HasValue)
+            {
+                _userLat = nativePos.Value.Latitude;
+                _userLng = nativePos.Value.Longitude;
+                _userLocationName = "Lokasi Perangkat (GPS Hardware HP)";
+                Snackbar.Add($"GPS HP Ditemukan: {_userLat:F4}, {_userLng:F4}", Severity.Success);
+            }
+            else
+            {
+                var pos = await JSRuntime.InvokeAsync<GpsPosDto>("getGPSCoordinates");
+                if (pos != null && pos.Latitude != 0)
+                {
+                    _userLat = pos.Latitude;
+                    _userLng = pos.Longitude;
+                    _userLocationName = "Lokasi Perangkat (GPS Web)";
+                    Snackbar.Add($"GPS Ditemukan: {_userLat:F4}, {_userLng:F4}", Severity.Success);
+                }
+            }
+        }
+        catch
+        {
+            // Fallback default Sunter if GPS denied
+        }
+        finally
+        {
+            _detectingGps = false;
+            await PerformSearch();
+        }
+    }
+
+    public class GpsPosDto
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 
     private async Task PerformSearch()
     {
         _loading = true;
-        _searchResults = await Api.SearchNearbyProductsAsync(-6.1480, 106.8720, _searchQuery, _selectedCategory);
+        _searchResults = await Api.SearchNearbyProductsAsync(_userLat, _userLng, _searchQuery, _selectedCategory);
         _loading = false;
     }
 
