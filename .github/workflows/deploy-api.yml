@@ -1,0 +1,40 @@
+name: Deploy TukangSayurOnline.Api to MonsterASP
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/TukangSayurOnline.Api/**'
+      - 'src/TukangSayurOnline.Shared/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore src/TukangSayurOnline.Api/TukangSayurOnline.Api.csproj
+
+      - name: Build & Publish API
+        run: dotnet publish src/TukangSayurOnline.Api/TukangSayurOnline.Api.csproj -c Release -o ./publish-output
+
+      - name: Sync FTP to MonsterASP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.MONSTERASP_FTP_SERVER }}
+          username: ${{ secrets.MONSTERASP_FTP_USERNAME }}
+          password: ${{ secrets.MONSTERASP_FTP_PASSWORD }}
+          local-dir: ./publish-output/
+          server-dir: /wwwroot/
+          dangerous-clean-slate: false
