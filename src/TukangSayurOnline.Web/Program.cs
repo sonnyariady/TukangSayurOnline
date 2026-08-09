@@ -13,9 +13,10 @@ builder.Services.AddMudServices();
 
 // Register App State and API Service
 builder.Services.AddSingleton<AppStateService>();
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5000/";
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("http://localhost:5000/")
+    BaseAddress = new Uri(apiBaseUrl.EndsWith("/") ? apiBaseUrl : apiBaseUrl + "/")
 });
 builder.Services.AddScoped<ApiService>();
 
