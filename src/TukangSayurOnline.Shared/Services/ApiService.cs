@@ -301,7 +301,9 @@ public class ApiService
         try
         {
             EnsureAuthHeader();
-            var url = $"api/pelanggan/nearby-vendors?userLat={lat}&userLng={lng}";
+            var latStr = lat.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var lngStr = lng.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var url = $"api/pelanggan/nearby-vendors?userLat={latStr}&userLng={lngStr}";
             var result = await _http.GetFromJsonAsync<List<NearbyVendorSummaryClientDto>>(url);
             return result ?? new List<NearbyVendorSummaryClientDto>();
         }
@@ -316,7 +318,9 @@ public class ApiService
         try
         {
             EnsureAuthHeader();
-            var url = $"api/pelanggan/vendors/{vendorId}/catalog?userLat={lat}&userLng={lng}";
+            var latStr = lat.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var lngStr = lng.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var url = $"api/pelanggan/vendors/{vendorId}/catalog?userLat={latStr}&userLng={lngStr}";
             return await _http.GetFromJsonAsync<VendorCatalogClientDto>(url);
         }
         catch
@@ -330,7 +334,9 @@ public class ApiService
         try
         {
             EnsureAuthHeader();
-            var url = $"api/pelanggan/search-nearby?userLat={lat}&userLng={lng}&";
+            var latStr = lat.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var lngStr = lng.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var url = $"api/pelanggan/search-nearby?userLat={latStr}&userLng={lngStr}&";
             if (!string.IsNullOrEmpty(query)) url += $"query={Uri.EscapeDataString(query)}&";
             if (!string.IsNullOrEmpty(category)) url += $"category={Uri.EscapeDataString(category)}";
 

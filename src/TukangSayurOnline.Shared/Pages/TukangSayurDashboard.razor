@@ -347,9 +347,11 @@
             {
                 _tukangLat = nativePos.Value.Latitude;
                 _tukangLng = nativePos.Value.Longitude;
-                _currentLocationName = $"Lapak (GPS HP: {_tukangLat:F4}, {_tukangLng:F4})";
+                var latStr = _tukangLat.ToString("F4", System.Globalization.CultureInfo.InvariantCulture);
+                var lngStr = _tukangLng.ToString("F4", System.Globalization.CultureInfo.InvariantCulture);
+                _currentLocationName = $"Lapak (GPS HP: {latStr}, {lngStr})";
                 await Api.ToggleOnlineAsync(_tukangSayurId, _isOnline, _tukangLat, _tukangLng, _currentLocationName);
-                Snackbar.Add($"Lokasi Lapak berhasil diperbarui ke GPS HP: {_tukangLat:F4}, {_tukangLng:F4}", Severity.Success);
+                Snackbar.Add($"Lokasi Lapak berhasil diperbarui ke GPS HP: {latStr}, {lngStr}", Severity.Success);
             }
             else
             {
@@ -358,9 +360,11 @@
                 {
                     _tukangLat = pos.Latitude;
                     _tukangLng = pos.Longitude;
-                    _currentLocationName = $"Lapak (GPS Web: {_tukangLat:F4}, {_tukangLng:F4})";
+                    var latStr = _tukangLat.ToString("F4", System.Globalization.CultureInfo.InvariantCulture);
+                    var lngStr = _tukangLng.ToString("F4", System.Globalization.CultureInfo.InvariantCulture);
+                    _currentLocationName = $"Lapak (GPS Web: {latStr}, {lngStr})";
                     await Api.ToggleOnlineAsync(_tukangSayurId, _isOnline, _tukangLat, _tukangLng, _currentLocationName);
-                    Snackbar.Add($"Lokasi Lapak berhasil diperbarui ke GPS: {_tukangLat:F4}, {_tukangLng:F4}", Severity.Success);
+                    Snackbar.Add($"Lokasi Lapak berhasil diperbarui ke GPS: {latStr}, {lngStr}", Severity.Success);
                 }
             }
         }

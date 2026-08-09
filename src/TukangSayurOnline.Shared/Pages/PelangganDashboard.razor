@@ -10,7 +10,7 @@
         <div>
             <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #4ade80;">🛒 Cari Sayur & Lapak Terdekat</MudText>
             <MudText Typo="Typo.body2" Style="color: #94a3b8;">
-                Lokasi Anda Saat Ini: 📍 <strong>@_userLocationName</strong> (Lat: @_userLat.ToString("F4"), Lng: @_userLng.ToString("F4"))
+                Lokasi Anda Saat Ini: 📍 <strong>@_userLocationName</strong> (Lat: @_userLat.ToString("F4", System.Globalization.CultureInfo.InvariantCulture), Lng: @_userLng.ToString("F4", System.Globalization.CultureInfo.InvariantCulture))
             </MudText>
         </div>
         <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.MyLocation" OnClick="DetectGPSLocation" Disabled="_detectingGps">
