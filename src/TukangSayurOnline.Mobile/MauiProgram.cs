@@ -18,13 +18,20 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
             });
 
-        // Load embedded appsettings.json stream into Configuration
-        var assembly = Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream("TukangSayurOnline.Mobile.appsettings.json");
-        if (stream != null)
+        // Load embedded appsettings.json stream into Configuration safely
+        try
         {
-            var config = new ConfigurationBuilder().AddJsonStream(stream).Build();
-            builder.Configuration.AddConfiguration(config);
+            var assembly = Assembly.GetExecutingAssembly();
+            using var stream = assembly.GetManifestResourceStream("TukangSayurOnline.Mobile.appsettings.json");
+            if (stream != null)
+            {
+                var config = new ConfigurationBuilder().AddJsonStream(stream).Build();
+                builder.Configuration.AddConfiguration(config);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Config load warning: {ex.Message}");
         }
 
         builder.Services.AddMauiBlazorWebView();

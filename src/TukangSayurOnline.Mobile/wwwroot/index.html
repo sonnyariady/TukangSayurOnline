@@ -21,6 +21,25 @@
         </div>
     </div>
 
+    <script>
+        window.onerror = function (msg, url, line, col, error) {
+            var app = document.getElementById('app');
+            if (app) {
+                app.innerHTML = '<div style="padding:24px; color:#f87171; background:#0f172a; min-height:100vh;">' +
+                    '<h3 style="color:#ef4444; margin-top:0;">⚠️ JavaScript Startup Error:</h3>' +
+                    '<pre style="white-space:pre-wrap; word-break:break-all; color:#fca5a5; font-size:13px;">' + msg + '\nURL: ' + url + '\nLine: ' + line + '</pre></div>';
+            }
+        };
+        window.addEventListener('unhandledrejection', function (e) {
+            var app = document.getElementById('app');
+            if (app) {
+                app.innerHTML = '<div style="padding:24px; color:#f87171; background:#0f172a; min-height:100vh;">' +
+                    '<h3 style="color:#ef4444; margin-top:0;">⚠️ Unhandled Rejection:</h3>' +
+                    '<pre style="white-space:pre-wrap; word-break:break-all; color:#fca5a5; font-size:13px;">' + (e.reason ? (e.reason.stack || e.reason) : e) + '</pre></div>';
+            }
+        });
+    </script>
+
     <div id="blazor-error-ui">
         An unhandled error has occurred.
         <a href="" class="reload">Reload</a>
