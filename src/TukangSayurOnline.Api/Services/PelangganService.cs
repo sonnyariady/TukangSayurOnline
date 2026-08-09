@@ -14,6 +14,7 @@ public interface IPelangganService
     Task<List<NearbyVendorProductDto>> SearchNearbyProductsAsync(double userLat, double userLng, string? query, string? category, double maxDistanceKm = 25);
     Task<OrderDto> CreateOrderAsync(int customerId, CreateOrderRequest request);
     Task<List<OrderDto>> GetMyOrdersAsync(int customerId);
+    Task<bool> UpdateCustomerLocationAsync(int customerId, double lat, double lng);
 }
 
 public class PelangganService : IPelangganService
@@ -197,6 +198,17 @@ public class PelangganService : IPelangganService
                 i.SubTotal
             )).ToList()
         );
+    }
+
+    public async Task<bool> UpdateCustomerLocationAsync(int customerId, double lat, double lng)
+    {
+        var user = await _context.Users.FindAsync(customerId);
+        if (user == null) return false;
+
+        user.Latitude = lat;
+        user.Longitude = lng;
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     private static double CalculateDistanceKm(double lat1, double lon1, double lat2, double lon2)

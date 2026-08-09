@@ -49,4 +49,13 @@ public class PelangganController : ControllerBase
         var result = await _pelangganService.GetMyOrdersAsync(customerId);
         return Ok(result);
     }
+
+    public record UpdateLocationRequest(double Latitude, double Longitude);
+
+    [HttpPost("{customerId}/update-location")]
+    public async Task<IActionResult> UpdateLocation(int customerId, [FromBody] UpdateLocationRequest request)
+    {
+        var success = await _pelangganService.UpdateCustomerLocationAsync(customerId, request.Latitude, request.Longitude);
+        return Ok(new { Success = success });
+    }
 }

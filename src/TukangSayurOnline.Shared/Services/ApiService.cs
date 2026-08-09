@@ -299,6 +299,20 @@ public class ApiService
             return new List<OrderClientDto>();
         }
     }
+
+    public async Task<bool> UpdateCustomerLocationAsync(int customerId, double lat, double lng)
+    {
+        try
+        {
+            EnsureAuthHeader();
+            var res = await _http.PostAsJsonAsync($"api/pelanggan/{customerId}/update-location", new { Latitude = lat, Longitude = lng });
+            return res.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
     #endregion
 
     #region Fallback Data Helpers

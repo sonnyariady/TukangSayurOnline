@@ -253,7 +253,10 @@ public class TukangSayurService : ITukangSayurService
 
     public async Task<bool> ToggleOnlineAsync(int tukangSayurId, bool isOnline, double latitude, double longitude, string locationName)
     {
-        var vendor = await _context.TukangSayurProfiles.FindAsync(tukangSayurId);
+        var vendor = await _context.TukangSayurProfiles
+            .Include(v => v.User)
+            .FirstOrDefaultAsync(v => v.Id == tukangSayurId);
+
         if (vendor == null) return false;
 
         vendor.IsOnline = isOnline;
@@ -261,6 +264,11 @@ public class TukangSayurService : ITukangSayurService
         {
             vendor.Latitude = latitude;
             vendor.Longitude = longitude;
+            if (vendor.User != null)
+            {
+                vendor.User.Latitude = latitude;
+                vendor.User.Longitude = longitude;
+            }
         }
         if (!string.IsNullOrWhiteSpace(locationName))
         {

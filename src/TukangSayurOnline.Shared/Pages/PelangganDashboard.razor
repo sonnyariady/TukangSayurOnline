@@ -235,6 +235,11 @@
                     Snackbar.Add($"GPS Ditemukan: {_userLat:F4}, {_userLng:F4}", Severity.Success);
                 }
             }
+
+            if (_userLat != 0 && _userLng != 0)
+            {
+                await Api.UpdateCustomerLocationAsync(_customerId, _userLat, _userLng);
+            }
         }
         catch
         {
